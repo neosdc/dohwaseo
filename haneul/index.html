@@ -1,0 +1,2216 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>한울호 디오라마</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+/* layout: full-bleed WebGL stage over a drifting starfield; a game HUD frames it — title plate and controls on top, deck directory left, minimap and status at the bottom */
+:root {
+  --space-0: #060914;
+  --space-1: #131a3a;
+  --space-2: #2a1f4a;
+  --ink: #ece9dd;
+  --ink-dim: #9aa2bf;
+  --signal: #ffb347;
+  --ok: #7dffb0;
+  --cyan: #58d6ff;
+  --line: rgba(236, 233, 221, .2);
+  --plate: rgba(9, 13, 30, .68);
+  --font-display: 'Chakra Petch', 'IBM Plex Sans KR', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(120% 90% at 78% 12%, var(--space-2) 0%, transparent 55%),
+    radial-gradient(110% 100% at 15% 95%, var(--space-1) 0%, transparent 60%),
+    var(--space-0);
+}
+#sky, #stage { position: fixed; inset: 0; }
+#sky { width: 100%; height: 100%; display: block; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#stage canvas:active { cursor: grabbing; }
+
+.hud {
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  display: grid; gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "top top" "list ." "map status";
+  padding-block: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.hud > * { min-width: 0; }
+.top { grid-area: top; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.panel {
+  pointer-events: auto;
+  background: var(--plate);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.plate {
+  padding: 10px 16px 10px 14px;
+  background: var(--plate);
+  border-left: 3px solid var(--signal);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: grid; gap: 2px;
+}
+.plate .code { margin: 0; font: 600 11px/1.4 var(--font-display); letter-spacing: .16em; color: var(--signal); }
+.plate h1 { margin: 0; font: 700 26px/1.15 var(--font-display); letter-spacing: .02em; }
+.plate .meta { margin: 0; font-size: 12px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.plate .clock { color: var(--ink); font-family: var(--font-display); font-weight: 600; letter-spacing: .06em; }
+
+button {
+  font: 600 12px/1 var(--font-display); letter-spacing: .06em;
+  color: var(--ink); background: rgba(236, 233, 221, .07);
+  border: 1px solid var(--line); border-radius: 0;
+  padding: 8px 10px; min-height: 32px; cursor: pointer;
+}
+button:hover { background: rgba(236, 233, 221, .17); }
+button[aria-pressed="true"], button[aria-expanded="true"] { background: var(--signal); border-color: var(--signal); color: var(--space-0); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 8px 8px; align-items: center; }
+.seg { display: flex; }
+.seg button + button { border-left: 0; }
+.seg svg { display: block; }
+
+.rooms { grid-area: list; align-self: start; max-height: 100%; width: 212px; max-width: 100%; overflow-y: auto; padding: 8px 8px 12px; }
+.rooms h2 { margin: 2px 4px 2px; font: 600 11px/1.4 var(--font-display); letter-spacing: .16em; color: var(--signal); }
+.rooms h3 { margin: 10px 4px 2px; font: 600 10.5px/1.4 var(--font-body); letter-spacing: .12em; color: var(--ink-dim); }
+.room {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 6px; align-items: center;
+  width: 100%; min-height: 0; padding: 6px 4px; text-align: left;
+  background: transparent; border: 0; border-bottom: 1px solid rgba(236, 233, 221, .1);
+  font: 400 12.5px/1.3 var(--font-body); letter-spacing: 0;
+}
+.room .rc { font: 600 10.5px/1 var(--font-display); letter-spacing: .04em; color: var(--ink-dim); }
+.room .ro { font: 600 11px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--ok); min-width: 1.4em; text-align: right; }
+.room[aria-current="true"] { background: rgba(255, 179, 71, .22); }
+.room[aria-current="true"] .rc { color: var(--signal); }
+
+.mapbox { grid-area: map; justify-self: start; align-self: end; padding: 8px 10px 10px 8px; display: grid; gap: 6px; }
+.sel { margin: 0; font-size: 12px; line-height: 1.4; color: var(--ink-dim); width: min(300px, calc(100vw - 52px)); }
+.sel b { color: var(--signal); font: 600 11px/1 var(--font-display); letter-spacing: .06em; margin-right: 6px; }
+.sel strong { color: var(--ink); font-weight: 600; }
+#minimap { display: block; width: min(300px, calc(100vw - 52px)); aspect-ratio: 124 / 44; cursor: pointer; background: rgba(6, 9, 20, .55); }
+
+.status { grid-area: status; align-self: end; padding: 10px 14px 10px 12px; font-size: 12px; max-width: 340px; }
+.status dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: baseline; }
+.status dt { font: 600 10.5px/1.4 var(--font-body); letter-spacing: .1em; color: var(--ink-dim); }
+.status dd { margin: 0; font-variant-numeric: tabular-nums; }
+.hint { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
+
+@media (max-width: 760px) {
+  .hud { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "list" "map" "status"; gap: 8px; }
+  .plate h1 { font-size: 20px; }
+  .status { justify-self: start; padding: 6px 12px 6px 10px; }
+  .hint { display: none; }
+}
+#fallback {
+  position: fixed; inset: 0; z-index: 3;
+  display: grid; place-items: center;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  text-align: center; color: var(--ink);
+}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="stage" role="img" aria-label="우주선 한울호 내부를 내려다본 3D 디오라마. 조종실, 전투정보실, 격납고, 무기고, 엔진실 등 26개 구획을 승무원과 로봇, 드론이 오가고 함재기가 발진과 귀환을 반복한다."></div>
+
+<div class="hud">
+  <div class="top">
+    <div class="plate">
+      <p class="code">ISV-07 · MAIN DECK</p>
+      <h1>한울호</h1>
+      <p class="meta"><span class="clock" id="clock">T+ 00:00:00</span> · <span id="spdTxt">1×</span></p>
+      <p class="meta">전장 190 m · 구획 26 · 승무원 20</p>
+    </div>
+    <div class="controls panel" role="group" aria-label="시뮬레이션 제어">
+      <div class="seg" role="group" aria-label="배속">
+        <button type="button" id="sp0" aria-pressed="false" aria-label="일시정지"><svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 1h2v8H2zM6 1h2v8H6z" fill="currentColor"/></svg></button>
+        <button type="button" id="sp1" aria-pressed="true">1×</button>
+        <button type="button" id="sp2" aria-pressed="false">2×</button>
+        <button type="button" id="sp4" aria-pressed="false">4×</button>
+        <button type="button" id="sp8" aria-pressed="false">8×</button>
+      </div>
+      <button type="button" id="btnOrbit" aria-pressed="false">자동 회전</button>
+      <button type="button" id="btnHome">전체 보기</button>
+      <button type="button" id="btnList" aria-expanded="true" aria-controls="rooms">구획 목록</button>
+    </div>
+  </div>
+
+  <nav id="rooms" class="rooms panel" aria-label="구획 목록">
+    <h2>DECK DIRECTORY</h2>
+    <div id="roomList"></div>
+  </nav>
+
+  <div class="mapbox panel">
+    <p id="sel" class="sel">구획을 선택하면 그곳으로 이동합니다.</p>
+    <canvas id="minimap" aria-label="갑판 미니맵. 누른 위치로 화면이 이동한다."></canvas>
+  </div>
+
+  <div class="status panel">
+    <dl>
+      <dt>승무원</dt><dd id="stCrew">–</dd>
+      <dt>로봇</dt><dd id="stBots">–</dd>
+      <dt>함재기</dt><dd id="stWing">–</dd>
+      <dt>성능</dt><dd id="stFps">–</dd>
+    </dl>
+    <p class="hint">드래그 회전 · 휠 확대 · 우클릭 드래그 이동 · 더블클릭 구획 선택<br>Space 일시정지 · 1–4 배속 · O 자동 회전 · R 전체 보기 · Esc 선택 해제</p>
+  </div>
+</div>
+<p id="fallback" hidden>3D 화면을 시작하지 못했습니다. WebGL을 지원하는 브라우저에서 다시 열어 주세요.</p>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script id="main">
+(function () {
+  'use strict';
+  const stage = document.getElementById('stage');
+  const fail = () => { document.getElementById('fallback').hidden = false; };
+  if (!window.THREE || !THREE.OrbitControls) { fail(); return; }
+
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
+  catch (e) { fail(); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;        // 그림자 맵은 두 프레임에 한 번만 갱신한다
+  let frameNo = 0;
+  stage.appendChild(renderer.domElement);
+
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ---------- scene, camera, controls ---------- */
+  const scene = new THREE.Scene();
+  const FOV = 20;                                // 좁은 화각의 원근 카메라: 등각 느낌은 유지하고 약한 원근만 준다
+  const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 2000);
+  const ISO_DIR = new THREE.Vector3(1, 1, 1).normalize();
+  let framed = false;
+  camera.position.set(59, 58.5, 60);               // 정등각(isometric) 방향
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(14, -2, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 14;
+  controls.maxDistance = 2400;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.update();
+
+  function resize() {
+    const w = stage.clientWidth || window.innerWidth || 800;
+    const h = stage.clientHeight || window.innerHeight || 600;
+    renderer.setSize(w, h, false);
+    const aspect = w / h;
+    camera.aspect = aspect;
+    if (!framed) {                               // 첫 화면: 선체 전체가 들어오는 거리에서 등각 방향으로 본다
+      const viewH = Math.max(74, 150 / aspect);
+      const dist = viewH / 2 / Math.tan(FOV * Math.PI / 360);
+      camera.position.copy(controls.target).addScaledVector(ISO_DIR, dist);
+      controls.update(); framed = true;
+    }
+    camera.updateProjectionMatrix();
+    resizeSky(w, h);
+  }
+
+  /* ---------- lights ---------- */
+  scene.add(new THREE.HemisphereLight(0xcfd8ff, 0x1a1c30, 0.72));
+  const sun = new THREE.DirectionalLight(0xfff1dc, 0.8);
+  sun.position.set(86, 134, 47); sun.target.position.set(16, 0, 0);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(4096, 4096);
+  sun.shadow.camera.left = -125; sun.shadow.camera.right = 125;
+  sun.shadow.camera.top = 120; sun.shadow.camera.bottom = -120;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 420;
+  sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
+  scene.add(sun); scene.add(sun.target);
+
+  /* ---------- helpers ---------- */
+  const ship = new THREE.Group();
+  scene.add(ship);
+  let root = ship, off = 0, rot = 0;                // 현재 만들고 있는 구획의 부모 그룹과 좌표 보정
+
+  function rngFactory(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const rnd = rngFactory(20261110);
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+
+  // 점광원이 많아 셰이더가 가벼운 Lambert 재질을 기본으로 쓴다 (roughness/metalness 옵션은 무시)
+  const M = (color, o) => { const q = Object.assign({ color }, o || {}); delete q.roughness; delete q.metalness; return new THREE.MeshLambertMaterial(q); };
+  const glow = (color, k) => new THREE.MeshLambertMaterial({ color: 0x0a0a0a, emissive: color, emissiveIntensity: k == null ? 1 : k });
+  const mats = {
+    trim: M(0x8d93a8), hull: M(0xb9b4a6, { roughness: 0.6, metalness: 0.2 }),
+    keel: M(0x4b4f63, { roughness: 0.6, metalness: 0.3 }), dark: M(0x2b3042), steel: M(0x7d8499, { metalness: 0.35, roughness: 0.5 }),
+    white: M(0xeeeae0), hazard: M(0xf2b632), red: M(0xd8453a), wood: M(0xb98a55), door: M(0x5f6b8a, { metalness: 0.3, roughness: 0.5 }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x9fdcff, transparent: true, opacity: 0.22, roughness: 0.1, depthWrite: false })
+  };
+
+  function add(mesh, parent, shadow) {
+    mesh.castShadow = shadow !== false; mesh.receiveShadow = shadow !== false;
+    (parent || root).add(mesh); return mesh;
+  }
+  // y는 항상 "바닥면 높이" (중심이 아니라)
+  function box(w, h, d, mat, x, y, z, parent, shadow) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y + h / 2, z); return add(m, parent, shadow);
+  }
+  function cyl(rt, rb, h, mat, x, y, z, parent, shadow, seg) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 20), mat);
+    m.position.set(x, y + h / 2, z); return add(m, parent, shadow);
+  }
+  function ball(r, mat, x, y, z, parent, shadow) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+    m.position.set(x, y, z); return add(m, parent, shadow);
+  }
+  function sparkAt(x, y, z, parent) {             // 용접 불꽃
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), new THREE.MeshBasicMaterial({ color: 0xfff2c0 }));
+    m.position.set(x, y, z); parent.add(m); sparks.push(m); return m;
+  }
+  function grp(x, y, z, parent) { const g = new THREE.Group(); g.position.set(x, y, z); (parent || root).add(g); return g; }
+
+  const flames = [], rings = [], lightPulse = [], bubbles = [], doors = [], puffs = [];
+  const sparks = [], armsAnim = [], hoverers = [], bobbers = [], swayers = [], lifters = [];
+  const anims = [], turrets = [];                // 구획별 개별 애니메이션 함수, 포탑
+  let scanner = null, drone = null, forkLift = null, cat = null;
+  const pulsers = [];   // {mat, base, amp, speed, phase}
+  const spinners = [];  // {obj, axis, speed}
+  const pulse = (mat, amp, speed) => { pulsers.push({ mat, base: mat.emissiveIntensity, amp, speed, phase: rnd() * 6.28 }); return mat; };
+
+  /* ---------- canvas textures: floor panels, wall panels ---------- */
+  function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  const panelCanvas = mkCanvas(64, 64);
+  (function () {
+    const c = panelCanvas.getContext('2d');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, 64, 64);
+    c.strokeStyle = 'rgba(0,0,0,.28)'; c.lineWidth = 2; c.strokeRect(1, 1, 62, 62);
+    c.fillStyle = 'rgba(0,0,0,.18)';
+    [[6, 6], [58, 6], [6, 58], [58, 58]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 6.3); c.fill(); });
+  })();
+  const wallCanvas = mkCanvas(64, 64);
+  (function () {
+    const c = wallCanvas.getContext('2d');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, 64, 64);
+    c.fillStyle = 'rgba(0,0,0,.24)'; c.fillRect(0, 50, 64, 14);            // 걸레받이
+    c.fillStyle = 'rgba(255,170,60,.55)'; c.fillRect(0, 47, 64, 3);        // 주황 띠
+    c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(0, 0, 2, 64);              // 패널 이음매
+    c.fillRect(0, 10, 64, 1.5);
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    for (let i = 0; i < 4; i++) c.fillRect(40, 20 + i * 4, 14, 2);         // 통풍구 슬롯
+    c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.arc(8, 5, 1.5, 0, 6.3); c.arc(58, 5, 1.5, 0, 6.3); c.fill();
+  })();
+  function tiled(canvas, rx, ry) {
+    const t = new THREE.CanvasTexture(canvas); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); return t;
+  }
+  function floor(x0, x1, z0, z1, color) {
+    const m = box(x1 - x0, 0.2, z1 - z0, M(color, { map: tiled(panelCanvas, (x1 - x0) / 2, (z1 - z0) / 2), roughness: 0.9 }), (x0 + x1) / 2, -0.2, (z0 + z1) / 2);
+    m.castShadow = false; return m;
+  }
+  const wallMat = len => M(0xdcd6c6, { map: tiled(wallCanvas, Math.max(1, Math.round(len / 2)), 1) });
+
+  /* ---------- animated screen textures (10fps) ---------- */
+  const screens = {};
+  function mkScreen(name, w, h, draw) {
+    const cv = mkCanvas(w, h);
+    screens[name] = { ctx: cv.getContext('2d'), tex: new THREE.CanvasTexture(cv), draw, w, h };
+  }
+  const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+  const BG = '#06090d';
+  mkScreen('radar', 96, 96, (c, t, w, h) => {
+    c.fillStyle = BG; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = 1.5;
+    [14, 28, 42].forEach(r => { c.beginPath(); c.arc(48, 48, r, 0, 6.3); c.stroke(); });
+    const a = t * 1.8;
+    c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); c.moveTo(48, 48); c.lineTo(48 + Math.cos(a) * 44, 48 + Math.sin(a) * 44); c.stroke();
+    c.fillStyle = '#fff';
+    for (let i = 0; i < 5; i++) { const ba = hash(i) * 6.28, br = 10 + hash(i + 9) * 30, d = ((a - ba) % 6.28 + 6.28) % 6.28; c.globalAlpha = Math.max(0.1, 1 - d / 4); c.fillRect(48 + Math.cos(ba) * br - 2, 48 + Math.sin(ba) * br - 2, 5, 5); }
+    c.globalAlpha = 1;
+  });
+  mkScreen('bars', 96, 64, (c, t, w, h) => {
+    c.fillStyle = BG; c.fillRect(0, 0, w, h); c.fillStyle = '#fff';
+    for (let i = 0; i < 9; i++) { const v = 0.25 + 0.7 * Math.abs(Math.sin(t * (0.8 + hash(i) * 1.6) + i)); c.fillRect(6 + i * 10, h - 6 - v * (h - 14), 7, v * (h - 14)); }
+    c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(4, 4, 40, 3);
+  });
+  mkScreen('wave', 128, 64, (c, t, w, h) => {
+    c.fillStyle = BG; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(255,255,255,.2)'; c.lineWidth = 1;
+    for (let x = 0; x < w; x += 16) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+    c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath();
+    for (let x = 0; x <= w; x += 2) {
+      const u = ((x / 46 + t * 1.1) % 1 + 1) % 1;
+      const y = u < 0.08 ? -u * 110 : u < 0.16 ? -8.8 + (u - 0.08) * 420 : u < 0.22 ? 24.8 - (u - 0.16) * 413 : Math.sin(u * 14) * 2;
+      x ? c.lineTo(x, 36 + y) : c.moveTo(x, 36 + y);
+    }
+    c.stroke();
+  });
+  mkScreen('text', 96, 64, (c, t, w, h) => {
+    c.fillStyle = BG; c.fillRect(0, 0, w, h); c.fillStyle = '#fff';
+    const off = t * 9, r0 = Math.floor(off / 8);
+    for (let i = -1; i < 9; i++) {
+      const row = r0 + i, y = i * 8 - (off % 8) + 6; let x = 5 + (hash(row) < 0.3 ? 8 : 0);
+      for (let k = 0; k < 4; k++) { const len = 6 + hash(row * 7 + k) * 20; if (x + len > w - 4) break; c.globalAlpha = 0.45 + hash(row + k * 3) * 0.55; c.fillRect(x, y, len, 3); x += len + 4; }
+    }
+    c.globalAlpha = 1;
+  });
+  mkScreen('planet', 256, 112, (c, t, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#0a1030'); g.addColorStop(1, '#1b2a5a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#fff';
+    for (let i = 0; i < 40; i++) { const x = ((hash(i) * w - t * (4 + hash(i + 5) * 10)) % w + w) % w; c.globalAlpha = 0.4 + hash(i + 2) * 0.6; c.fillRect(x, hash(i + 11) * h, 2, 2); }
+    c.globalAlpha = 1;
+    c.save(); c.beginPath(); c.arc(178, 70, 46, 0, 6.3); c.clip();
+    c.fillStyle = '#e8a05a'; c.fillRect(120, 20, 120, 100);
+    ['#c9743a', '#f2c68a', '#b8603a', '#f0b070'].forEach((col, i) => { c.fillStyle = col; c.fillRect(120, 34 + i * 16 + Math.sin(t * 0.3 + i) * 2, 120, 7); });
+    c.fillStyle = 'rgba(0,0,20,.35)'; c.beginPath(); c.arc(200, 82, 50, 0, 6.3); c.fill();
+    c.restore();
+    c.strokeStyle = 'rgba(255,230,190,.8)'; c.lineWidth = 3; c.beginPath(); c.ellipse(178, 70, 70, 12, -0.25, 0, 6.3); c.stroke();
+  });
+  const screenMat = (name, color) => new THREE.MeshBasicMaterial({ map: screens[name].tex, color: color == null ? 0xffffff : color });
+  let screenClock = 0;
+  function updateScreens(dt, t, force) {
+    screenClock += dt;
+    if (!force && screenClock < 0.1) return;
+    screenClock = 0;
+    for (const k in screens) { const s = screens[k]; s.draw(s.ctx, t, s.w, s.h); s.tex.needsUpdate = true; }
+  }
+
+  /* ---------- floor stencil labels ---------- */
+  const labelDraws = [];
+  function label(code, en, ko, cx, cz) {
+    const cv = mkCanvas(512, 144);
+    const tex = new THREE.CanvasTexture(cv);
+    const draw = () => {
+      const c = cv.getContext('2d');
+      c.clearRect(0, 0, 512, 144);
+      c.textBaseline = 'top';
+      c.fillStyle = '#ffb347';
+      c.font = '600 28px "Chakra Petch", sans-serif';
+      c.fillText(code + '  ' + en, 8, 10);
+      c.fillRect(8, 46, 96, 4);
+      c.fillStyle = '#f4f1e6';
+      c.font = '600 64px "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+      c.fillText(ko, 6, 60);
+      tex.needsUpdate = true;
+    };
+    draw(); labelDraws.push(draw);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(4, 1.125),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.82, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(cx + off, 0.03, cz);
+    ship.add(m); return m;
+  }
+  // 바닥 데칼용 얇은 판 (z-fighting을 피하려고 층마다 높이를 다르게 둔다)
+  const decal = (w, d, mat, x, z, lift) => box(w, 0.012, d, mat, x, lift == null ? 0.004 : lift, z, null, false);
+
+  /* ---------- walls & doors ---------- */
+  const WALL_H = 1.5, WALL_T = 0.3;
+  const lampMat = pulse(glow(0xfff0c8, 1.3), 0.15, 0.7);
+  const portMat = pulse(glow(0xffd9a0, 1.1), 0.2, 0.5);
+  function pieces(a, b, gaps) {
+    const out = []; let cur = a;
+    (gaps || []).slice().sort((p, q) => p[0] - q[0]).forEach(g => { out.push([cur, g[0] - g[1] / 2]); cur = g[0] + g[1] / 2; });
+    out.push([cur, b]);
+    return out.filter(s => s[1] - s[0] > 0.01);
+  }
+  // o.ports: 선체 바깥쪽 방향(+1/-1)을 주면 현창을 단다. o.pipe: 벽 위 배관.
+  function wallX(z, x0, x1, gaps, o) {            // x축을 따라 뻗는 벽
+    o = o || {};
+    pieces(x0, x1, gaps).forEach(s => {
+      const len = s[1] - s[0], mid = (s[0] + s[1]) / 2;
+      box(len, WALL_H + 0.2, WALL_T, wallMat(len), mid, -0.2, z);
+      box(len, 0.08, WALL_T + 0.1, mats.trim, mid, WALL_H, z);
+      for (let x = s[0] + 1.4; x < s[1] - 0.6; x += 2.8) {
+        box(0.34, 0.05, 0.14, lampMat, x, WALL_H + 0.08, z, null, false);
+        if (o.ports) {
+          const r = cyl(0.36, 0.36, 0.05, mats.steel, x, 0, z + o.ports * 0.165, null, false); r.rotation.x = Math.PI / 2; r.position.y = 0.62;
+          const p = cyl(0.27, 0.27, 0.05, portMat, x, 0, z + o.ports * 0.185, null, false, 16); p.rotation.x = Math.PI / 2; p.position.y = 0.62;
+        }
+      }
+      if (o.pipe && len > 1) { const p = cyl(0.06, 0.06, len - 0.5, M(0xd8795f), mid, 0, z + o.pipe * 0.09, null, false, 8); p.rotation.z = Math.PI / 2; p.position.y = WALL_H + 0.14; }
+    });
+    (gaps || []).forEach(g => doorFrame(g[0], z, true, g[1]));
+  }
+  function wallZ(x, z0, z1, gaps) {               // z축을 따라 뻗는 벽
+    pieces(z0, z1, gaps).forEach(s => {
+      const len = s[1] - s[0], mid = (s[0] + s[1]) / 2;
+      box(WALL_T, WALL_H + 0.2, len, wallMat(len), x, -0.2, mid);
+      box(WALL_T + 0.1, 0.08, len, mats.trim, x, WALL_H, mid);
+      for (let z = s[0] + 1.4; z < s[1] - 0.6; z += 2.8) box(0.14, 0.05, 0.34, lampMat, x, WALL_H + 0.08, z, null, false);
+    });
+    (gaps || []).forEach(g => doorFrame(x, g[0], false, g[1]));
+  }
+  function doorFrame(x, z, alongX, w) {
+    const post = (px, pz) => box(0.34, 2.3, 0.34, mats.steel, px, -0.2, pz);
+    const light = pulse(glow(0x7dffb0, 1.2), 0.5, 2);
+    const panel = sgn => {
+      const m = alongX ? box(w / 2, 1.66, 0.12, mats.door, x + sgn * w / 4, -0.2, z) : box(0.12, 1.66, w / 2, mats.door, x, -0.2, z + sgn * w / 4);
+      const stripe = alongX ? [w / 2 - 0.16, 0.07, 0.15] : [0.15, 0.07, w / 2 - 0.16];
+      box(stripe[0], stripe[1], stripe[2], mats.hazard, 0, 0.2, 0, m, false);
+      const win = alongX ? [w / 2 - 0.3, 0.3, 0.14] : [0.14, 0.3, w / 2 - 0.3];
+      box(win[0], win[1], win[2], glow(0x9fdcff, 0.5), 0, -0.3 + 0.75, 0, m, false);
+      return m;
+    };
+    if (alongX) {
+      post(x - w / 2 - 0.1, z); post(x + w / 2 + 0.1, z);
+      box(w + 0.54, 0.22, 0.4, mats.steel, x, 2.0, z);
+      box(0.5, 0.08, 0.42, light, x, 2.07, z, null, false);
+      decal(w, 0.5, mats.hazard, x, z, 0.012);
+    } else {
+      post(x, z - w / 2 - 0.1); post(x, z + w / 2 + 0.1);
+      box(0.4, 0.22, w + 0.54, mats.steel, x, 2.0, z);
+      box(0.42, 0.08, 0.5, light, x, 2.07, z, null, false);
+      decal(0.5, w, mats.hazard, x, z, 0.012);
+    }
+    doors.push({ x, z, alongX, w, a: panel(-1), b: panel(1), open: 0, light });
+  }
+
+  /* ---------- hull & exterior ---------- */
+  // 갑판 단면을 훨씬 큰 선체가 감싼다: 여러 층의 현창, 포탑이 놓인 긴 선수 갑판, 선미 기관부, 양현 추진 나셀
+  (function buildHull() {
+    // 중심 좌표 기준 원통 (axis: 'x' | 'z' | 'y')
+    function tube(rt, rb, len, mat, x, y, z, axis, shadow, seg) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, len, seg || 24), mat);
+      if (axis === 'x') m.rotation.z = Math.PI / 2; else if (axis === 'z') m.rotation.x = Math.PI / 2;
+      m.position.set(x, y, z); return add(m, null, shadow);
+    }
+    const F = 34, A = -34;                       // 선수·선미 구획이 늘어난 만큼 앞뒤 구조물을 옮긴다
+    const H = [[-71, 12], [-67, 15], [-20, 15], [-18.5, 24], [18.5, 24], [20, 15], [53, 15], [55, 13], [66, 10], [90, 5.5], [108, 2.2]];
+    const P = H.map(p => [p[0], -p[1]]).concat(H.slice().reverse());
+    const s = new THREE.Shape();
+    P.forEach((p, i) => i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]));
+    s.closePath();
+    const DEPTH = 6, BEV = 0.4, DECK = -0.2, RIM = 20.5;
+    const geo = new THREE.ExtrudeGeometry(s, { depth: DEPTH, bevelEnabled: true, bevelSize: BEV, bevelThickness: BEV, bevelSegments: 2 });
+    geo.rotateX(-Math.PI / 2);
+    const hullMat = M(0xb9b4a6, { map: tiled(panelCanvas, 0.4, 0.4) });
+    const hull = add(new THREE.Mesh(geo, hullMat)); hull.position.y = DECK - DEPTH - BEV;
+    const keel = add(new THREE.Mesh(geo, mats.keel)); keel.scale.set(0.82, 0.55, 0.62); keel.position.set(3, -10.52, 0);
+    box(44, 3, 0.8, mats.keel, -28, -13.4, 0);                                     // 용골 핀
+    box(24, 1.8, 0.6, mats.keel, 46, -12.3, 0);
+    // 선체를 두르는 주황 띠
+    const bandGeo = new THREE.ExtrudeGeometry(s, { depth: 0.35, bevelEnabled: true, bevelSize: BEV + 0.05, bevelThickness: 0.02, bevelSegments: 1 });
+    bandGeo.rotateX(-Math.PI / 2);
+    const band = add(new THREE.Mesh(bandGeo, M(0xe8873a)), null, false); band.position.y = -1.15;
+
+    // 현창: 선체 측면 4개 층 + 나셀
+    const wins = [];
+    P.forEach((a, i) => {
+      const b = P[(i + 1) % P.length];
+      if (a[0] < -70 && b[0] < -70) return;                                        // 선미면은 추진기 자리
+      const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz);
+      if (len < 0.1) return;
+      let nx = dz / len, nz = -dx / len;
+      if (nx * (a[0] + b[0] - 30) + nz * (a[1] + b[1]) < 0) { nx = -nx; nz = -nz; }
+      for (let d = 1.0; d < len - 0.8; d += 1.5) [-1.9, -3.1, -4.3, -5.5].forEach(y => {
+        if (rnd() < 0.22) return;
+        wins.push({ x: a[0] + dx / len * d + nx * (BEV + 0.03), y, z: a[1] + dz / len * d + nz * (BEV + 0.03), ry: Math.atan2(-dz, dx) });
+      });
+    });
+
+    // 포탑: 받침 위에서 좌우로 천천히 훑는 2연장 포
+    function turret(x, z, sc, yaw0) {
+      const g = grp(x, DECK, z); g.scale.setScalar(sc);
+      cyl(1.2, 1.45, 0.4, mats.keel, 0, 0, 0, g);
+      const head = grp(0, 0.4, 0, g);
+      box(1.7, 0.7, 1.4, mats.steel, 0, 0, 0, head); box(1.2, 0.1, 1.0, mats.hazard, -0.1, 0.7, 0, head, false);
+      [-0.36, 0.36].forEach(dz => { const b = cyl(0.11, 0.14, 2.3, mats.dark, 1.85, 0, dz, head, true, 8); b.rotation.z = Math.PI / 2; b.position.y = 0.4; });
+      box(0.25, 0.18, 0.25, pulse(glow(0xff4a3d, 1.3), 1.0, 2), -0.6, 0.8, 0, head, false);
+      turrets.push({ head, yaw0, phase: rnd() * 6.28 });
+    }
+
+    /* --- 선수 갑판 --- */
+    // 착륙 패드와 셔틀
+    tube(3.1, 3.1, 0.04, mats.dark, 33.5 + F, DECK + 0.02, 0, 'y', false, 40).receiveShadow = true;
+    const padRing = new THREE.Mesh(new THREE.RingGeometry(2.55, 2.75, 48), mats.hazard);
+    padRing.rotation.x = -Math.PI / 2; padRing.position.set(33.5 + F, DECK + 0.05, 0); ship.add(padRing);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; ball(0.1, pulse(glow(0x58d6ff, 1.4), 1.3, 3), 33.5 + F + Math.cos(a) * 3.0, DECK + 0.08, Math.sin(a) * 3.0, null, false); }
+    const sh = grp(33.5 + F, DECK + 0.04, 0); sh.rotation.y = 0.45;
+    [-0.5, 0.5].forEach(z => box(2.2, 0.08, 0.1, mats.dark, 0, 0, z, sh));
+    box(2.6, 0.7, 1.3, mats.white, 0, 0.22, 0, sh); box(0.9, 0.5, 1.1, mats.white, 1.6, 0.22, 0, sh);
+    box(0.55, 0.3, 0.95, glow(0x6fb6ff, 0.8), 1.45, 0.72, 0, sh, false);
+    box(1.0, 0.08, 3.2, M(0xe8873a), -0.5, 0.5, 0, sh); box(0.7, 0.8, 0.08, M(0xe8873a), -1.0, 0.92, 0, sh);
+    box(2.0, 0.1, 0.02, mats.dark, 0, 0.55, 0.66, sh, false);
+    [-0.4, 0.4].forEach(z => { const e = cyl(0.2, 0.2, 0.1, pulse(glow(0xffa24a, 1.2), 0.4, 5), -1.34, 0, z, sh, false, 12); e.rotation.z = Math.PI / 2; e.position.y = 0.55; });
+    // 유도등, 센서 돔, 접시 안테나, 통신 마스트
+    for (let i = 0; i < 6; i++) ball(0.09, pulse(glow(0x7dffb0, 1.4), 1.4, 4), 37.6 + F + i * 0.9, DECK + 0.06, 0, null, false);
+    [-2.6, 2.6].forEach(z => { ball(0.75, mats.steel, 40 + F, DECK, z); cyl(0.9, 0.9, 0.12, mats.dark, 40 + F, DECK, z, null, false); });
+    box(1.8, 0.4, 1.8, mats.steel, 43.6 + F, DECK, 0);
+    const dish = cyl(1.4, 0.35, 0.5, mats.white, 43.6 + F, DECK + 0.9, 0); dish.rotation.z = -0.5;
+    cyl(0.1, 0.1, 0.7, mats.dark, 43.6 + F, DECK + 0.3, 0);
+    spinners.push({ obj: dish, axis: 'y', speed: 0.5 });
+    cyl(0.05, 0.07, 3.6, mats.dark, 46.3 + F, DECK, 2.6);
+    ball(0.13, pulse(glow(0xff4a3d, 1.5), 1.5, 3), 46.3 + F, DECK + 3.65, 2.6, null, false);
+    const name = label('ISV-07', 'HANEUL', '한울', 72.4, 5.6); name.position.y = DECK + 0.02; name.scale.setScalar(1.4);
+    // 주포탑 2기와 선수 표시
+    turret(88, 0, 1.35, 0); turret(98.5, 0, 1.0, 0);
+    [-1.2, 1.2].forEach(z => box(0.6, 0.012, 0.9, mats.hazard, 104.5, DECK + 0.004, z, null, false));
+    // 갑판 화물 컨테이너와 해치
+    const cont = [M(0xc8553d), M(0x3f6f7a), M(0xe8c06a), M(0x6b6f8a)];
+    [[29.6, 7.6, 0], [29.6, -7.6, 1], [32.2, -6.6, 2]].forEach(c => { box(2.4, 1.0, 1.0, cont[c[2]], c[0] + F, DECK, c[1]); box(2.44, 0.06, 1.04, mats.dark, c[0] + F, DECK + 0.45, c[1], null, false); });
+    box(2.4, 1.0, 1.0, cont[3], 29.8 + F, DECK + 1.0, -7.6);
+    [[36.5, -4.4], [36.5, 4.9], [30.5, 4.6]].forEach(p => { box(1.3, 0.012, 1.3, mats.hazard, p[0] + F, DECK + 0.004, p[1], null, false); box(1.1, 0.012, 1.1, mats.dark, p[0] + F, DECK + 0.012, p[1], null, false); });
+
+    /* --- 선수·선미 구획 갑판 가장자리: 근접 방어 포탑 --- */
+    [[-45, -13], [-25, -13], [-45, 13], [-25, 13], [25, -13], [45, -13]].forEach(p => turret(p[0], p[1], 0.75, p[1] < 0 ? Math.PI / 2 : -Math.PI / 2));
+
+    /* --- 좌현·우현 외곽 통로 (중앙 구획) --- */
+    const walk = M(0x9a9588), railMat = mats.steel;
+    [-1, 1].forEach(sg => {
+      box(34.6, 0.012, 1.3, walk, 0, DECK + 0.004, sg * (RIM + 1.7), null, false).receiveShadow = true;
+      box(35, 0.05, 0.05, railMat, 0, DECK + 0.62, sg * (RIM + 3.05), null, false); box(35, 0.04, 0.04, railMat, 0, DECK + 0.32, sg * (RIM + 3.05), null, false);
+      for (let x = -17.4; x <= 17.5; x += 2.4) cyl(0.04, 0.04, 0.64, railMat, x, DECK, sg * (RIM + 3.05), null, false, 6);
+      [-16.8, 17.0].forEach(x => { box(1.0, 0.45, 0.6, mats.steel, x, DECK, sg * (RIM + 2.6)); [-0.25, 0.25].forEach(dx => cyl(0.16, 0.08, 0.24, mats.dark, x + dx, DECK + 0.45, sg * (RIM + 2.6), null, false, 10)); });   // RCS
+      ball(0.18, pulse(glow(sg < 0 ? 0x49ff9a : 0xff4a3d, 1.2), 1.2, 1.6), 0, DECK + 0.1, sg * (RIM + 3.25), null, false);   // 항법등
+      [-10, 0, 10].forEach(x => box(0.9, 0.3, 0.9, mats.steel, x, DECK, sg * (RIM + 0.9)));                           // 환기구
+      // 도킹 포트
+      tube(1.5, 1.5, 1.2, mats.steel, 0, -3, sg * 25.0, 'z'); tube(1.1, 1.1, 0.06, mats.dark, 0, -3, sg * 25.62, 'z', false);
+      tube(1.58, 1.58, 0.12, pulse(glow(0x7dffb0, 1), 0.8, 2), 0, -3, sg * 25.5, 'z', false);
+      // 기관부 측면 배관, 조종실 옆 구명정
+      tube(0.25, 0.25, 12, mats.steel, -27 + A, DECK + 0.3, sg * 10.6, 'x'); tube(0.16, 0.16, 12, M(0xd8795f), -27 + A, DECK + 0.22, sg * 9.9, 'x');
+      [-32, -21.6].forEach(x => box(0.5, 0.7, 1.4, mats.dark, x + A, DECK, sg * 10.25));
+      [19.8, 22.6].forEach(x => { box(1.9, 0.8, 1.2, M(0xe8873a), x + F, DECK, sg * 8.0); box(0.7, 0.25, 1.22, glow(0x9fdcff, 0.6), x + F + 0.3, DECK + 0.45, sg * 8.0, null, false); box(1.94, 0.06, 1.24, mats.white, x + F, DECK + 0.1, sg * 8.0, null, false); });
+    });
+    // 북쪽 통로의 화물 (기본 시점에서 내부를 가리지 않는 쪽)
+    [[-13, 0], [-10.5, 1], [-2, 3], [3.2, 2], [9.8, 3], [12.3, 0]].forEach(c => { box(2.2, 0.9, 0.9, cont[c[1]], c[0], DECK, -(RIM + 1.7)); box(2.24, 0.06, 0.94, mats.dark, c[0], DECK + 0.4, -(RIM + 1.7), null, false); });
+    box(2.2, 0.9, 0.9, cont[2], -11.8, DECK + 0.9, -(RIM + 1.7));
+    [-30, -26.6, -23.2].forEach(x => { ball(1.0, mats.white, x + A, DECK + 0.9, -12.4); cyl(0.7, 0.9, 0.3, mats.dark, x + A, DECK, -12.4, null, false); });   // 연료 구체
+    // 수직 발사관 해치 (엔진실 남쪽 갑판)
+    for (let i = 0; i < 4; i++) [11.7, 13.4].forEach(z => { box(1.3, 0.012, 1.3, mats.hazard, -65 + i * 1.8, DECK + 0.004, z, null, false); box(1.05, 0.03, 1.05, mats.dark, -65 + i * 1.8, DECK + 0.012, z, null, false); });
+
+    /* --- 선미 기관부 --- */
+    box(8, 1.5, 15, mats.keel, -31.6 + A, DECK, 0);
+    box(8.2, 0.12, 15.2, mats.hazard, -31.6 + A, DECK + 0.02, 0, null, false);
+    for (let z = -6.5; z <= 6.6; z += 1.0) box(7, 0.5, 0.15, mats.steel, -31.6 + A, DECK + 1.5, z);              // 방열 핀
+    [-3, 0, 3].forEach(z => box(6.6, 0.05, 0.5, pulse(glow(0xff7a3a, 1.5), 0.6, 2 + rnd() * 2), -31.6 + A, DECK + 1.5, z, null, false));
+    [-5, 5].forEach(z => { cyl(0.5, 0.65, 2.0, mats.dark, -34.6 + A, DECK + 1.5, z); cyl(0.42, 0.42, 0.05, pulse(glow(0xff7a3a, 1.2), 0.5, 3), -34.6 + A, DECK + 3.5, z, null, false); });
+    const flame = (r, len, color, op, base, y, z, phase) => {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(r, len, 24, 1, true),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      f.rotation.z = Math.PI / 2; f.position.set(base - len / 2, y, z); ship.add(f);
+      flames.push({ mesh: f, len, base, phase });
+    };
+    [-7.5, 0, 7.5].forEach((z, i) => {
+      tube(3.4, 2.3, 4, mats.keel, -39.2 + A, -3.2, z, 'x');
+      tube(2.5, 2.5, 0.35, mats.hazard, -37.8 + A, -3.2, z, 'x', false);
+      tube(3.45, 3.45, 0.2, mats.steel, -41.1 + A, -3.2, z, 'x', false);
+      tube(3.0, 3.0, 0.1, pulse(glow(0xffa24a, 2.2), 0.6, 9 + i), -41.0 + A, -3.2, z, 'x', false);
+      flame(2.7, 14, 0xffb060, 0.3, -41.1 + A, -3.2, z, i * 2.1);
+      flame(1.4, 7.5, 0xfff0d0, 0.45, -41.1 + A, -3.2, z, i * 2.1 + 1);
+    });
+
+    /* --- 추진 나셀과 태양 전지 날개 --- */
+    const cell = M(0x1f3f8a, { map: tiled(panelCanvas, 17, 4.5) });
+    const nacMat = M(0xa8a394, { map: tiled(panelCanvas, 6, 22) });
+    const NC = -22.5;
+    [-1, 1].forEach((sg, i) => {
+      const zc = sg * 30, y = -3.5;
+      tube(3.0, 3.0, 75, nacMat, NC, y, zc, 'x');
+      tube(3.0, 0.4, 6, mats.keel, 18, y, zc, 'x');
+      ball(0.4, pulse(glow(0x58d6ff, 1.4), 0.8, 2), 21.1, y, zc, null, false);
+      tube(3.5, 2.6, 3.6, mats.keel, -61.8, y, zc, 'x');
+      tube(3.0, 3.0, 0.1, pulse(glow(0x6fd0ff, 2.0), 0.6, 8 + i), -63.55, y, zc, 'x', false);
+      flame(2.4, 10, 0x7fc8ff, 0.3, -63.6, y, zc, 3 + i);
+      flame(1.3, 5.5, 0xe8f6ff, 0.45, -63.6, y, zc, 4 + i);
+      [-54, -4].forEach(x => tube(3.08, 3.08, 0.6, mats.hazard, x, y, zc, 'x', false));
+      [-44, -32, -18, 8].forEach(x => tube(3.07, 3.07, 0.3, mats.white, x, y, zc, 'x', false));
+      [-10, 8].forEach(x => { box(4, 1.1, 4.8, mats.keel, x, y - 0.55, sg * 26.6); box(3.2, 0.12, 4.8, mats.hazard, x, y + 0.55, sg * 26.6, null, false); });   // 연결 파일런
+      box(4, 1.1, 13.4, mats.keel, -42, y - 0.55, sg * 21.5); box(3.2, 0.12, 13.4, mats.hazard, -42, y + 0.55, sg * 21.5, null, false);
+      for (let x = -58; x <= 13; x += 1.6) [-1, 1].forEach(side => { if (rnd() > 0.2) wins.push({ x, y: y + 0.5, z: zc + side * 2.98, ry: 0 }); });
+      // 날개
+      const g = grp(NC, y, sg * 33.0); g.rotation.x = sg * -0.07;
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.6, 10), mats.steel); strut.rotation.x = Math.PI / 2; strut.position.set(0, 0, sg * 0.7); add(strut, g);
+      box(34, 0.1, 9, cell, 0, -0.05, sg * 5.9, g);
+      [1.4, 5.9, 10.4].forEach(dz => box(34.2, 0.14, 0.14, mats.white, 0, -0.07, sg * dz, g, false));
+      [-17, -8.5, 0, 8.5, 17].forEach(dx => box(0.14, 0.14, 9, mats.white, dx, -0.07, sg * 5.9, g, false));
+      ball(0.16, pulse(glow(sg < 0 ? 0x49ff9a : 0xff4a3d, 1.3), 1.3, 2), NC, y, sg * 43.6, null, false);
+    });
+    // 북쪽 나셀 위 통신 마스트 (선체에서 가장 높은 구조물)
+    cyl(0.18, 0.34, 10.2, mats.steel, -8, -0.7, -30);
+    [3.5, 5.8].forEach((yy, k) => { box(2.8 - k * 0.8, 0.08, 0.08, mats.steel, -8, yy, -30, null, false); box(0.08, 0.08, 2.8 - k * 0.8, mats.steel, -8, yy, -30, null, false); });
+    const d2 = cyl(0.9, 0.2, 0.3, mats.white, -8, 1.6, -31); d2.rotation.x = -0.9;
+    const radar = grp(-8, 8.1, -30); box(2.0, 0.3, 0.1, mats.white, 0, 0, 0, radar); spinners.push({ obj: radar, axis: 'y', speed: 1.6 });
+    ball(0.15, pulse(glow(0xff4a3d, 1.5), 1.5, 3), -8, 9.6, -30, null, false);
+    ball(1.6, mats.white, -8, -0.9, 30); tube(1.85, 1.85, 0.2, mats.dark, -8, -0.6, 30, 'y', false);          // 남쪽 나셀 센서 돔
+
+    // 현창을 한 번의 드로우 콜로
+    const im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.62, 0.3, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff }), wins.length);
+    const o = new THREE.Object3D(), col = new THREE.Color();
+    wins.forEach((w, i) => {
+      o.position.set(w.x, w.y, w.z); o.rotation.set(0, w.ry, 0); o.updateMatrix(); im.setMatrixAt(i, o.matrix);
+      const k = rnd(); im.setColorAt(i, col.setHex(k < 0.55 ? 0xffd9a0 : k < 0.8 ? 0x9fdcff : 0x5a4c38));
+    });
+    im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    ship.add(im);
+  })();
+
+  /* ---------- deck plan ---------- */
+  const PX = Math.PI / 2, NX = -Math.PI / 2, PZ = 0, NZ = Math.PI;   // 바라보는 방향(heading)
+  const ROOMS = {};
+  /* 복도 중심선으로 이루어진 내비게이션 그래프: 가로 복도 A·B·C, 세로 연결 복도 W·E */
+  const NAV = { nodes: [], adj: [] };
+  const LINES = { A: { axis: 'x', c: 0, ids: [] }, B: { axis: 'x', c: -11, ids: [] }, C: { axis: 'x', c: 11, ids: [] },
+                  W: { axis: 'z', c: -15.5, ids: [] }, E: { axis: 'z', c: 15.5, ids: [] } };
+  function navNode(x, z, lines) {
+    let id = NAV.nodes.findIndex(n => Math.abs(n.x - x) < 0.01 && Math.abs(n.z - z) < 0.01);
+    if (id < 0) { id = NAV.nodes.length; NAV.nodes.push({ x, z }); NAV.adj.push([]); }
+    lines.forEach(k => { if (LINES[k].ids.indexOf(id) < 0) LINES[k].ids.push(id); });
+    return id;
+  }
+  [-11, 0, 11].forEach((z, i) => { const k = 'BAC'[i]; navNode(-15.5, z, [k, 'W']); navNode(15.5, z, [k, 'E']); });
+  function linkNav() {
+    Object.keys(LINES).forEach(k => {
+      const L = LINES[k], key = L.axis === 'x' ? 'x' : 'z';
+      const ids = L.ids.slice().sort((a, b) => NAV.nodes[a][key] - NAV.nodes[b][key]);
+      for (let i = 0; i < ids.length - 1; i++) {
+        const a = ids[i], b = ids[i + 1];
+        if (NAV.adj[a].indexOf(b) < 0) { NAV.adj[a].push(b); NAV.adj[b].push(a); }
+      }
+    });
+  }
+  function navPath(a, b) {                        // 다익스트라 최단 경로 (노드 수가 적어 단순 구현)
+    const n = NAV.nodes.length, dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
+    dist[a] = 0;
+    for (let it = 0; it < n; it++) {
+      let u = -1;
+      for (let i = 0; i < n; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
+      if (u < 0 || dist[u] === Infinity || u === b) break;
+      done[u] = true;
+      NAV.adj[u].forEach(v => {
+        const d = dist[u] + Math.hypot(NAV.nodes[v].x - NAV.nodes[u].x, NAV.nodes[v].z - NAV.nodes[u].z);
+        if (d < dist[v]) { dist[v] = d; prev[v] = u; }
+      });
+    }
+    const out = []; for (let v = b; v >= 0; v = prev[v]) out.unshift(v);
+    return out[0] === a ? out : [a, b];
+  }
+  // line: 문이 면한 복도, door: 문 위치, inn: 문 바로 안쪽 지점
+  function room(id, line, door, inn) {
+    root = ship; off = 0; rot = 0;
+    const L = LINES[line];
+    const node = L.axis === 'x' ? navNode(door[0], L.c, [line]) : navNode(L.c, door[1], [line]);
+    return (ROOMS[id] = { id, inn, node, stations: [] });
+  }
+  function S(r, x, z, face, o) {
+    o = o || {};
+    const st = Object.assign({ room: r, x: x + off, z, face, pose: 'stand', h: 0, user: null, lx: x, lz: z, lface: face }, o);
+    st.via = (o.via || []).map(v => [v[0] + off, v[1]]);
+    r.stations.push(st); return st;
+  }
+
+  function consoleUnit(st, w, color, dist, kind) {
+    const d = dist || 0.95;
+    const g = grp(st.lx + Math.sin(st.lface) * d, 0, st.lz + Math.cos(st.lface) * d); g.rotation.y = st.lface + Math.PI;
+    box(w, 0.85, 0.6, mats.dark, 0, 0, -0.05, g);
+    box(w + 0.04, 0.06, 0.64, mats.steel, 0, 0.1, -0.05, g, false);
+    const scr = box(w - 0.2, 0.04, 0.5, pulse(glow(color, 1.1), 0.25, 3 + rnd() * 3), 0, 0.9, 0, g, false); scr.rotation.x = 0.45;
+    box(w - 0.4, 0.62, 0.06, mats.dark, 0, 1.02, -0.34, g);
+    box(w - 0.5, 0.52, 0.02, screenMat(kind || pick(['radar', 'bars', 'wave', 'text']), color), 0, 1.07, -0.3, g, false);
+    for (let i = 0; i < 4; i++) box(0.07, 0.03, 0.07, glow(pick([0xff4a3d, 0x7dffb0, 0xffc46b, 0x58d6ff]), 1.2), -w / 2 + 0.2 + i * 0.16, 0.86, 0.2, g, false);
+    return g;
+  }
+  function makeDrone(color, parent, cone) {
+    const d = grp(0, 0, 0, parent);
+    box(0.4, 0.14, 0.4, mats.white, 0, -0.07, 0, d); ball(0.07, pulse(glow(color, 1.6), 1.2, 5), 0, -0.12, 0, d, false);
+    [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].forEach(p => {
+      box(0.06, 0.04, 0.06, mats.dark, p[0] * 0.6, 0, p[1] * 0.6, d, false);
+      const rt = grp(p[0], 0.08, p[1], d); box(0.42, 0.015, 0.05, mats.dark, 0, 0, 0, rt, false); spinners.push({ obj: rt, axis: 'y', speed: 30 });
+    });
+    if (cone) {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.2, 16, 1, true),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      c.position.y = -1.25; d.add(c);
+    }
+    return d;
+  }
+  // 상자 뚜껑·바닥 테두리는 본체 면과 겹치지 않게 살짝 띄운다 (z-fighting 방지)
+  function crateBox(x, y, z, s, m, face) {
+    box(s, s, s, m, x, y, z);
+    box(s + 0.06, 0.08, s + 0.06, mats.dark, x, y + s - 0.05, z);
+    box(s + 0.06, 0.08, s + 0.06, mats.dark, x, y + 0.02, z);
+    box(0.02, s * 0.3, s * 0.45, mats.white, x + face * (s / 2 + 0.006), y + s * 0.4, z, null, false);
+    box(0.02, s * 0.1, s * 0.1, mats.hazard, x + face * (s / 2 + 0.007), y + s * 0.72, z + s * 0.25, null, false);
+    return s + 0.03;
+  }
+  function roomLight(color, x, z, k) {
+    const l = new THREE.PointLight(color, k || 0.7, 16, 2); l.position.set(x, 3.2, z); root.add(l); return l;
+  }
+  function plant(x, z, s) {
+    s = s || 1;
+    cyl(0.3 * s, 0.24 * s, 0.5 * s, M(0xb5653f), x, 0, z); ball(0.42 * s, M(0x4fae5a), x, 0.95 * s, z); ball(0.3 * s, M(0x7fcf5e), x - 0.2 * s, 1.3 * s, z + 0.1 * s);
+  }
+  function extinguisher(x, z) { cyl(0.11, 0.11, 0.5, mats.red, x, 0, z); cyl(0.04, 0.04, 0.12, mats.dark, x, 0.5, z, null, false); }
+
+  // floors
+  const CORR = 0x3a3f52, CROSS = 0x40465c;
+  const SEG_A = [[-51, -17], [-14, 14], [17, 51]];     // 중앙 복도 A: 선미·중앙·선수 구획을 관통한다
+  SEG_A.forEach(s => floor(s[0], s[1], -1.5, 1.5, CORR));
+  floor(-14, 14, -12.5, -9.5, CORR);      // 북쪽 복도 B
+  floor(-14, 14, 9.5, 12.5, CORR);        // 남쪽 복도 C
+  floor(-17, -14, -12.5, 12.5, CROSS);    // 서쪽 연결 복도 W
+  floor(14, 17, -12.5, 12.5, CROSS);      // 동쪽 연결 복도 E
+  floor(51, 59, -6, 6, 0x32456a);         // 조종실
+  floor(-61, -51, -8, 8, 0x54403a);       // 엔진실
+  floor(-14, -5, -9.5, -1.5, 0x33523f);   // 수경재배실
+  floor(-5, 5, -9.5, -1.5, 0x664f36);     // 휴게실
+  floor(5, 14, -9.5, -1.5, 0x4a3f66);     // 선실 A
+  floor(-14, -5, 1.5, 9.5, 0x2d5263);     // 정수실
+  floor(-5, 5, 1.5, 9.5, 0x59533c);       // 창고 A
+  floor(5, 14, 1.5, 9.5, 0x3e5e58);       // 의무실
+  [0x5a4a3a, 0x364a5e, 0x3a5a5e, 0x4f3f6a].forEach((c, i) => floor(-17 + i * 8.5, -8.5 + i * 8.5, -20.5, -12.5, c));   // 북쪽 외곽: 보전반·로봇 수리실·연구실·선실 B
+  [0x5c563e, 0x6a4a3a, 0x34506e, 0x5e3f5c].forEach((c, i) => floor(-17 + i * 8.5, -8.5 + i * 8.5, 12.5, 20.5, c));     // 남쪽 외곽: 창고 B·식당·체력단련실·선실 C
+  [[17, 27, 0x4f3d3a], [27, 39, 0x38455e], [39, 51, 0x2a2f4a]].forEach(r => floor(r[0], r[1], -11, -1.5, r[2]));       // 선수 북쪽: 무기고·작전 회의실·전투정보실
+  floor(17, 51, 1.5, 11, 0x454a58);                                                                                    // 선수 남쪽: 격납고
+  [[-51, -40, 0x5e4a34], [-40, -28, 0x4a4f5c], [-28, -17, 0x2c3558]].forEach(r => floor(r[0], r[1], -11, -1.5, r[2])); // 선미 북쪽: 연료 저장고·공작실·전산실
+  [[-51, -40, 0x34564c], [-40, -28, 0x523e38], [-28, -17, 0x3c4254]].forEach(r => floor(r[0], r[1], 1.5, 11, r[2]));   // 선미 남쪽: 생명유지실·어뢰실·보안실
+
+  // walls — 중앙 구획
+  const sideDoors = [[-9.5, 1.8], [0, 1.8], [9.5, 1.8]];
+  const outerDoors = [[-12.75, 1.8], [-4.25, 1.8], [4.25, 1.8], [12.75, 1.8]];
+  wallX(-20.5, -17, 17, null, { ports: -1 }); wallX(20.5, -17, 17, null, { ports: 1 });
+  wallX(-12.5, -17, 17, outerDoors); wallX(12.5, -17, 17, outerDoors);
+  wallX(-9.5, -14, 14, null, { pipe: -1 }); wallX(9.5, -14, 14, null, { pipe: 1 });
+  wallX(-1.5, -14, 14, sideDoors, { pipe: 1 }); wallX(1.5, -14, 14, sideDoors, { pipe: -1 });
+  wallZ(-17, -20.5, 20.5, [[0, 2]]); wallZ(17, -20.5, 20.5, [[0, 2]]);          // 구획 사이 격벽문
+  [-14, -5, 5, 14].forEach(x => { wallZ(x, -9.5, -1.5); wallZ(x, 1.5, 9.5); });
+  [-8.5, 0, 8.5].forEach(x => { wallZ(x, -20.5, -12.5); wallZ(x, 12.5, 20.5); });
+  // walls — 선수 구획과 조종실
+  wallX(-1.5, 17, 51, [[22, 1.8], [33, 1.8], [45, 1.8]], { pipe: 1 }); wallX(1.5, 17, 51, [[34, 2.6]], { pipe: -1 });
+  wallX(-11, 17, 51, null, { ports: -1 });
+  wallX(11, 17, 20.5, null, { ports: 1 }); wallX(11, 47.5, 51, null, { ports: 1 });   // 그 사이는 격납고 발진구
+  wallZ(27, -11, -1.5); wallZ(39, -11, -1.5);
+  wallZ(51, -11, 11, [[0, 2]]);
+  wallX(-6, 51, 59, null, { ports: -1 }); wallX(6, 51, 59, null, { ports: 1 });
+  // walls — 선미 구획과 엔진실
+  const aftDoors = [[-45.5, 1.8], [-34, 1.8], [-22.5, 1.8]];
+  wallX(-1.5, -51, -17, aftDoors, { pipe: 1 }); wallX(1.5, -51, -17, aftDoors, { pipe: -1 });
+  wallX(-11, -51, -17, null, { ports: -1 }); wallX(11, -51, -17, null, { ports: 1 });
+  [-40, -28].forEach(x => { wallZ(x, -11, -1.5); wallZ(x, 1.5, 11); });
+  wallZ(-51, -11, 11, [[0, 2]]);
+  wallX(-8, -61, -51, null, { ports: -1 }); wallX(8, -61, -51, null, { ports: 1 });
+  wallZ(-61, -8, 8);
+  // 조종실 전면 유리와 창살
+  box(WALL_T, 0.55, 12, mats.steel, 59, -0.2, 0);
+  box(0.12, 2.25, 12, mats.glass, 59, 0.35, 0, null, false);
+  [-6, -3, 0, 3, 6].forEach(z => box(z % 6 ? 0.14 : 0.34, 2.8, z % 6 ? 0.14 : 0.34, mats.steel, 59, -0.2, z));
+  box(0.3, 0.14, 12.3, mats.steel, 59, 2.6, 0);
+
+  // 복도: 조명 띠, 중앙 점선, 방향 화살표, 소화기, 화분
+  const stripMat = pulse(glow(0x8fd8ff, 1.3), 0.3, 1.2), lineMat = M(0x7d8499);
+  SEG_A.forEach(s => {
+    [-1.2, 1.2].forEach(dz => decal(s[1] - s[0] - 0.6, 0.1, stripMat, (s[0] + s[1]) / 2, dz));
+    for (let x = s[0] + 1.5; x <= s[1] - 1.5; x += 1.25) decal(0.6, 0.06, lineMat, x, 0);
+  });
+  [-11, 11].forEach(zc => {
+    [-1.2, 1.2].forEach(dz => decal(27.4, 0.1, stripMat, 0, zc + dz));
+    for (let x = -12.5; x <= 12.5; x += 1.25) decal(0.6, 0.06, lineMat, x, zc);
+  });
+  [-15.5, 15.5].forEach(xc => {
+    [-1.2, 1.2].forEach(dx => { decal(0.1, 7.4, stripMat, xc + dx, -5.5); decal(0.1, 7.4, stripMat, xc + dx, 5.5); });
+    for (let z = -8.75; z <= 8.8; z += 1.25) if (Math.abs(z) > 1.4) decal(0.06, 0.6, lineMat, xc, z);
+    [-11, 0, 11].forEach(z => {                                                     // 교차로 표시
+      decal(1.3, 1.3, mats.hazard, xc, z, 0.002); decal(1.1, 1.1, M(CROSS), xc, z, 0.008);
+    });
+  });
+  [-30.2, -5.2, 4.8, 28.8].forEach(x => [0.5, -0.5].forEach(z => {
+    const sg = z > 0 ? 1 : -1;
+    decal(0.5, 0.08, mats.hazard, x, z, 0.012);
+    const a = decal(0.26, 0.08, mats.hazard, x + sg * 0.2, z + 0.07, 0.012); a.rotation.y = sg * 0.7;
+    const b = decal(0.26, 0.08, mats.hazard, x + sg * 0.2, z - 0.07, 0.012); b.rotation.y = -sg * 0.7;
+  }));
+  extinguisher(-4.6, -1.22); extinguisher(4.6, 1.22); extinguisher(-13.5, 1.22);
+  extinguisher(-8.4, -9.78); extinguisher(8.6, 9.78); extinguisher(-16.72, -5); extinguisher(16.72, 5);
+  extinguisher(-39.4, 1.22); extinguisher(-28.6, -1.22); extinguisher(28, -1.22); extinguisher(40, 1.22);
+  plant(13.45, -1.05, 0.6); plant(-13.45, -1.05, 0.6); plant(0, -9.85, 0.6); plant(0, 9.85, 0.6);
+  plant(50.4, -1.05, 0.6); plant(-50.4, 1.05, 0.6);
+  [[5.6, -1.22, 1], [-6.2, -9.78, -1], [6.2, 9.78, 1], [-25.6, -1.22, 1], [38.4, -1.22, 1]].forEach(p => {   // 안내 단말
+    box(0.5, 0.9, 0.25, mats.dark, p[0], 0, p[1]); box(0.4, 0.4, 0.02, screenMat('text', 0x7dffb0), p[0], 0.45, p[1] + p[2] * 0.13, null, false);
+  });
+  // 복도 벤치
+  [[-16.6, 5.5], [16.6, -5.5]].forEach(p => { box(0.45, 0.4, 1.8, M(0x3f6f7a), p[0], 0, p[1]); box(0.5, 0.05, 1.84, mats.steel, p[0], 0.4, p[1], null, false); });
+
+  /* ----- 조종실 (bridge) ----- */
+  (function () {
+    const r = room('bridge', 'A', [51, 0], [52.4, 0]);
+    root = grp(37, 0, 0, ship); off = 37;
+    consoleUnit(S(r, 19.9, -3, PX), 2.4, 0x58d6ff, 0.95, 'radar');
+    consoleUnit(S(r, 19.9, 0, PX, { via: [[17.7, -1.25]] }), 2.4, 0xffc46b, 0.95, 'text');
+    consoleUnit(S(r, 19.9, 3, PX), 2.4, 0x58d6ff, 0.95, 'bars');
+    consoleUnit(S(r, 17, -4.5, NZ), 2.2, 0x7dffb0, 0.95, 'wave');
+    S(r, 16.5, 2.4, PZ);
+    S(r, 17.7, 0, PX, { pose: 'sit', h: 0.5, via: [[17.7, -0.95]] });     // 함장석
+    box(0.7, 0.5, 0.7, M(0x3f4f7a), 17.7, 0, 0); box(0.14, 0.95, 0.7, M(0x3f4f7a), 17.3, 0.3, 0);
+    box(0.6, 0.12, 0.1, mats.dark, 17.75, 0.62, 0.4); box(0.6, 0.12, 0.1, mats.dark, 17.75, 0.62, -0.4);
+    cyl(0.5, 0.56, 0.1, mats.dark, 17.7, 0, 0, null, false);
+    // 홀로그램 항법 테이블
+    cyl(0.75, 0.85, 0.7, mats.dark, 16.5, 0, 3.6);
+    cyl(0.6, 0.6, 0.04, pulse(glow(0x58d6ff, 1.4), 0.4, 2), 16.5, 0.7, 3.6, null, false);
+    const ringDecal = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.15, 40), glow(0x58d6ff, 0.9));
+    ringDecal.rotation.x = -Math.PI / 2; ringDecal.position.set(16.5, 0.012, 3.6); root.add(ringDecal);
+    const holo = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10),
+      new THREE.MeshBasicMaterial({ color: 0x7fe6ff, wireframe: true, transparent: true, opacity: 0.75 }));
+    holo.position.set(16.5, 1.5, 3.6); root.add(holo); spinners.push({ obj: holo, axis: 'y', speed: 0.8 });
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.3, 0.9, 20, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x58d6ff, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    beam.position.set(16.5, 1.2, 3.6); root.add(beam);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.015, 6, 40), new THREE.MeshBasicMaterial({ color: 0xffc46b }));
+    ring.rotation.x = 1.25; ring.position.copy(holo.position); root.add(ring); spinners.push({ obj: ring, axis: 'z', speed: 1.4 });
+    const moon = grp(16.5, 1.5, 3.6); ball(0.07, glow(0xffc46b, 1.5), 0.72, 0, 0, moon, false); spinners.push({ obj: moon, axis: 'y', speed: -1.1 });
+    // 조종석 의자
+    [-1.35, 1.35].forEach(z => { box(0.6, 0.45, 0.6, mats.steel, 18.6, 0, z); box(0.12, 0.7, 0.6, mats.steel, 18.3, 0.45, z); });
+    // 서버 랙과 깜빡이는 표시등
+    box(2.6, 1.4, 0.5, mats.dark, 19.6, 0, 5.5);
+    for (let i = 0; i < 12; i++) box(0.1, 0.05, 0.03, pulse(glow(pick([0x7dffb0, 0xffc46b, 0x58d6ff, 0xff4a3d]), 1.2), 1.2, 2 + rnd() * 8), 18.6 + (i % 6) * 0.4, 0.5 + Math.floor(i / 6) * 0.45, 5.24, null, false);
+    box(0.5, 1.2, 0.5, mats.dark, 14.6, 0, -5.4); box(0.5, 1.2, 0.5, mats.dark, 14.6, 0, 5.4);
+    extinguisher(14.5, 1.6);
+    roomLight(0x6fb6ff, 18, 0, 0.75);
+    label('A-01', 'BRIDGE', '조종실', 16.6, 5.2);
+  })();
+
+  /* ----- 엔진실 (engine room) ----- */
+  (function () {
+    const r = room('engine', 'A', [-51, 0], [-52.4, 0]);
+    root = grp(-37, 0, 0, ship); off = -37;
+    S(r, -17.4, 0, NX); S(r, -20, -3.7, NZ); S(r, -20, 3.7, PZ);
+    consoleUnit(S(r, -16, -6.3, NZ), 2.2, 0xff9d4a, 0.95, 'bars');
+    // 반응로
+    cyl(1.5, 1.6, 0.5, mats.dark, -19.5, 0, 0);
+    cyl(0.95, 0.95, 2.0, pulse(glow(0x6ff2ff, 1.6), 0.7, 2.4), -19.5, 0.5, 0, null, false);
+    cyl(1.5, 1.4, 0.45, mats.dark, -19.5, 2.5, 0);
+    cyl(0.35, 0.45, 0.3, mats.steel, -19.5, 2.95, 0);
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      box(0.14, 2.0, 0.14, mats.steel, -19.5 + Math.cos(a) * 1.3, 0.5, Math.sin(a) * 1.3);
+    }
+    [0.9, 1.5, 2.1].forEach((y, i) => {
+      const t = new THREE.Mesh(new THREE.TorusGeometry(1.32, 0.07, 8, 32), glow(0xffa24a, 1.4));
+      t.rotation.x = Math.PI / 2; t.position.set(-19.5, y, 0); root.add(t);
+      rings.push({ mesh: t, base: y, phase: i * 2.1 });
+    });
+    // 바닥 경고선
+    const haz = new THREE.Mesh(new THREE.RingGeometry(1.95, 2.15, 48), mats.hazard);
+    haz.rotation.x = -Math.PI / 2; haz.position.set(-19.5, 0.012, 0); haz.receiveShadow = true; root.add(haz);
+    const coreLight = new THREE.PointLight(0x6ff2ff, 1.0, 14, 2); coreLight.position.set(-19.5, 2.2, 0); root.add(coreLight);
+    lightPulse.push({ light: coreLight, base: 1.0, amp: 0.35, speed: 2.4 });
+    // 배기 증기
+    for (let i = 0; i < 6; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xe8f4ff, transparent: true, opacity: 0.3, depthWrite: false }));
+      root.add(m); puffs.push({ mesh: m, x: -19.5, y: 3.3, z: 0, rise: 2.4, sc: 1, off: i / 6, dx: (rnd() - 0.5) * 0.8, dz: (rnd() - 0.5) * 0.8 });
+    }
+    // 반응로-추진기 배관
+    [-0.6, 0.6].forEach(z => { const p = cyl(0.2, 0.2, 3.2, mats.steel, -22.4, 0, z); p.rotation.z = Math.PI / 2; p.position.y = 0.6;
+      const v = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.05, 6, 16), mats.red); v.position.set(-22.2, 0.6, z); v.rotation.y = Math.PI / 2; add(v, null, false); });
+    // 발전기 2기
+    [-5.6, 5.6].forEach((z, i) => {
+      box(3.2, 1.3, 1.8, mats.steel, -20, 0, z);
+      box(3.3, 0.12, 1.9, mats.dark, -20, 0, z, null, false);
+      box(3.0, 0.1, 0.08, pulse(glow(0xffa24a, 1.2), 0.5, 4), -20, 0.8, z - Math.sign(z) * 0.92, null, false);
+      for (let k = 0; k < 5; k++) box(0.35, 0.05, 0.06, mats.dark, -21.2 + k * 0.6, 0.35, z - Math.sign(z) * 0.92, null, false);
+      [-21, -19].forEach(x => {
+        const g = grp(x, 1.3, z);
+        cyl(0.55, 0.55, 0.16, mats.dark, 0, 0, 0, g); box(0.95, 0.06, 0.14, mats.hazard, 0, 0.16, 0, g); box(0.14, 0.06, 0.95, mats.hazard, 0, 0.161, 0, g);
+        spinners.push({ obj: g, axis: 'y', speed: 5 + i });
+      });
+      const cable = box(0.1, 0.05, Math.abs(z) - 2.9, mats.dark, -18.4, 0.001, z / 2 + Math.sign(z) * 0.55, null, false);
+    });
+    // 배전반과 냉각재 탱크
+    box(0.7, 1.9, 2.6, mats.dark, -23.4, 0, 4.2); box(0.7, 1.9, 2.6, mats.dark, -23.4, 0, -4.2);
+    [-4.2, 4.2].forEach(z => [0.5, 0.95, 1.4].forEach(y => box(0.04, 0.12, 2.2, pulse(glow(0x7dffb0, 1), 0.6, 2 + rnd() * 5), -23.03, y, z, null, false)));
+    [-7.0, 7.0].forEach(z => { cyl(0.5, 0.5, 1.8, M(0x4aa8d8), -23.0, 0, z); cyl(0.52, 0.52, 0.1, mats.hazard, -23.0, 1.2, z, null, false); ball(0.5, M(0x4aa8d8), -23.0, 1.8, z); });
+    // 공구 카트
+    box(1.0, 0.08, 0.6, mats.red, -15.3, 0.55, 4.6); box(1.0, 0.08, 0.6, mats.red, -15.3, 0.2, 4.6);
+    [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]].forEach(p => cyl(0.03, 0.03, 0.6, mats.steel, -15.3 + p[0], 0, 4.6 + p[1], null, false, 6));
+    box(0.5, 0.1, 0.12, mats.steel, -15.4, 0.63, 4.5, null, false); box(0.25, 0.18, 0.25, mats.hazard, -15.0, 0.63, 4.7, null, false);
+    extinguisher(-14.5, 1.6);
+    roomLight(0xff8a4a, -19, 5, 0.55); roomLight(0xff8a4a, -19, -5, 0.55);
+    label('E-02', 'ENGINE ROOM', '엔진실', -16.6, 7.1);
+  })();
+
+  /* ----- 수경재배실 (hydroponics) ----- */
+  (function () {
+    const r = room('hydro', 'A', [-9.5, 0], [-9.5, -2.6]);
+    const W = [-11.6, -3.4], E = [-7.4, -3.4];
+    S(r, -12.3, -6, NX, { via: [W] }); S(r, -10.75, -7.6, PX, { via: [W] });
+    S(r, -8.25, -7.6, NX, { via: [E] }); S(r, -6.7, -6, PX, { via: [E] });
+    const leaf = [M(0x4fae5a), M(0x7fcf5e), M(0x2f8a4e)], fruit = M(0xe8503a), soil = M(0x1e3a36);
+    const grow = glow(0xff4fd8, 1.6);          // 실제 식물 재배등의 적+청 혼합 자홍색
+    const flow = pulse(glow(0x58d6ff, 0.9), 0.5, 3);
+    function bed(xc, z0, z1, w) {
+      const len = z1 - z0, zc = (z0 + z1) / 2;
+      box(w, 0.6, len, mats.white, xc, 0, zc);
+      box(w + 0.04, 0.08, len + 0.04, mats.steel, xc, 0.1, zc, null, false);
+      box(w - 0.16, 0.05, len - 0.16, soil, xc, 0.6, zc, null, false);
+      box(0.05, 0.03, len - 0.3, flow, xc, 0.65, zc, null, false);          // 양액 수로
+      const cols = w > 1 ? [-0.36, 0.36] : [-0.2];
+      for (let z = z0 + 0.45; z < z1 - 0.3; z += 0.62) cols.forEach(dx => {
+        const k = rnd(), m = pick(leaf), px = xc + dx + (rnd() - 0.5) * 0.1;
+        if (k < 0.4) { ball(0.2 + rnd() * 0.08, m, px, 0.82, z); ball(0.12, pick(leaf), px + 0.12, 0.92, z + 0.1); }
+        else if (k < 0.75) { const c = add(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.55 + rnd() * 0.3, 7), m)); c.position.set(px, 0.92, z); }
+        else { cyl(0.03, 0.03, 0.7, m, px, 0.65, z); ball(0.17, m, px, 1.25, z); ball(0.08, fruit, px + 0.14, 1.12, z); ball(0.07, fruit, px - 0.1, 1.28, z + 0.1); }
+      });
+      cyl(0.04, 0.04, 2.0, mats.steel, xc, 0, z0 + 0.06); cyl(0.04, 0.04, 2.0, mats.steel, xc, 0, z1 - 0.06);
+      box(Math.min(w, 0.5), 0.08, len, grow, xc, 2.0, zc, null, false);
+      box(Math.min(w, 0.5) + 0.1, 0.05, len + 0.1, mats.dark, xc, 2.08, zc, null, false);
+    }
+    bed(-13.25, -9.0, -3.6, 0.9); bed(-5.75, -9.0, -3.6, 0.9); bed(-9.5, -9.0, -5.2, 1.4);
+    cyl(0.5, 0.5, 1.2, M(0x7fbfae), -9.5, 0, -4.4);          // 양액 탱크
+    cyl(0.52, 0.52, 0.1, mats.steel, -9.5, 1.2, -4.4);
+    box(0.06, 0.5, 0.2, pulse(glow(0x7dffb0, 1.1), 0.3, 1.5), -9.5, 0.4, -3.89, null, false);
+    // 모종 트레이 선반, 물뿌리개
+    box(1.2, 0.06, 0.5, mats.steel, -6.2, 0.7, -2.2); box(1.2, 0.06, 0.5, mats.steel, -6.2, 0.3, -2.2);
+    [-6.7, -5.7].forEach(x => cyl(0.03, 0.03, 0.76, mats.steel, x, 0, -2.2, null, false, 6));
+    for (let i = 0; i < 4; i++) { box(0.2, 0.08, 0.3, mats.dark, -6.65 + i * 0.3, 0.76, -2.2, null, false); ball(0.07, pick(leaf), -6.65 + i * 0.3, 0.9, -2.2, null, false); }
+    cyl(0.14, 0.12, 0.26, M(0x4aa8d8), -12.9, 0, -2.3);
+    // 관수 드론
+    drone = grp(-9.5, 2.7, -6.5);
+    box(0.4, 0.14, 0.4, mats.white, 0, -0.07, 0, drone); ball(0.07, pulse(glow(0x58d6ff, 1.6), 1.2, 5), 0, -0.12, 0, drone, false);
+    [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].forEach(p => {
+      box(0.06, 0.04, 0.06, mats.dark, p[0] * 0.6, 0, p[1] * 0.6, drone, false);
+      const rot = grp(p[0], 0.08, p[1], drone); box(0.42, 0.015, 0.05, mats.dark, 0, 0, 0, rot, false); spinners.push({ obj: rot, axis: 'y', speed: 30 });
+    });
+    roomLight(0xff5fd8, -9.5, -6.5, 0.8);
+    label('H-03', 'HYDROPONICS', '수경재배실', -11.3, -2.3);
+  })();
+
+  /* ----- 휴게실 (lounge) ----- */
+  (function () {
+    const r = room('lounge', 'A', [0, 0], [0, -2.6]);
+    const sofaVia = z => [[2.8, -3.4], [2.6, z]];
+    S(r, 1.75, -7.4, PX, { pose: 'sit', h: 0.45, via: sofaVia(-7.4) });
+    S(r, 1.75, -5.4, PX, { pose: 'sit', h: 0.45, via: sofaVia(-5.4) });
+    S(r, -2.4, -4.85, NZ, { pose: 'sit', h: 0.45 });
+    S(r, -1.05, -6.2, NX, { pose: 'sit', h: 0.45 });
+    S(r, -3.7, -8.2, NX, { via: [[-3.8, -3.6]] });
+    const fabric = M(0xc8553d), wood = mats.wood;
+    decal(3.3, 4.6, M(0x3f6f7a), 2.95, -6.4, 0.002); decal(2.9, 4.2, M(0xe8c06a), 2.95, -6.4, 0.008); decal(2.6, 3.9, M(0x3f6f7a), 2.95, -6.4, 0.014);   // 러그
+    box(1.0, 0.45, 4.0, fabric, 1.6, 0, -6.4); box(0.3, 1.0, 4.0, fabric, 0.95, 0, -6.4);   // 소파
+    box(1.3, 0.62, 0.3, fabric, 1.45, 0, -8.55); box(1.3, 0.62, 0.3, fabric, 1.45, 0, -4.25);
+    [-7.9, -6.4, -4.9].forEach((z, i) => box(0.16, 0.4, 0.5, M([0xe8c06a, 0x3f6f7a, 0xeeeae0][i]), 1.2, 0.47, z));   // 쿠션
+    box(0.6, 0.35, 1.6, wood, 3.7, 0, -6.4);                                                 // 낮은 탁자
+    cyl(0.1, 0.08, 0.16, mats.white, 3.7, 0.35, -6.0); cyl(0.1, 0.08, 0.16, M(0x58d6ff), 3.65, 0.35, -6.8);
+    box(0.3, 0.03, 0.42, M(0x8a6fd8), 3.75, 0.35, -6.4, null, false);
+    box(0.08, 1.7, 3.6, mats.dark, 4.78, 0.5, -6.4);                                         // 벽면 스크린
+    box(0.03, 1.5, 3.4, screenMat('planet'), 4.72, 0.6, -6.4, null, false);
+    cyl(0.9, 0.9, 0.08, wood, -2.4, 0.67, -6.2); cyl(0.12, 0.3, 0.67, mats.dark, -2.4, 0, -6.2);   // 원탁
+    [[-2.4, -4.85], [-1.05, -6.2], [-2.4, -7.55]].forEach(p => cyl(0.26, 0.22, 0.45, M(0xe8c06a), p[0], 0, p[1]));
+    cyl(0.07, 0.06, 0.14, mats.white, -2.2, 0.75, -5.9); cyl(0.07, 0.06, 0.14, mats.white, -2.1, 0.75, -6.5);
+    for (let i = 0; i < 5; i++) { const c = box(0.14, 0.012, 0.2, i % 2 ? mats.white : mats.red, -2.75 + i * 0.13, 0.75 + i * 0.002, -6.25 + (i % 3) * 0.08, null, false); c.rotation.y = i * 0.5; }   // 카드
+    box(0.7, 0.9, 2.5, mats.white, -4.45, 0, -7.8);                                          // 간이 주방
+    box(0.72, 0.05, 2.52, wood, -4.45, 0.9, -7.8);
+    box(0.4, 0.5, 0.5, mats.dark, -4.5, 0.95, -8.6); box(0.05, 0.12, 0.3, pulse(glow(0xffb347, 1.4), 0.4, 3), -4.28, 1.2, -8.6, null, false);
+    box(0.4, 0.04, 0.5, mats.steel, -4.45, 0.95, -7.3, null, false);
+    [[-4.5, -7.75], [-4.35, -7.9], [-4.55, -8.0]].forEach((p, i) => cyl(0.06, 0.05, 0.12, [mats.white, mats.red, mats.hazard][i], p[0], 0.95, p[1], null, false, 10));
+    // 책장
+    box(2.2, 1.3, 0.4, wood, -0.4, 0, -9.1);
+    [0.5, 0.9].forEach(y => { let x = -1.35; while (x < 0.5) { const w = 0.08 + rnd() * 0.08; box(w, 0.26 + rnd() * 0.08, 0.26, M(pick([0xc8553d, 0x3f6f7a, 0xe8c06a, 0x8a6fd8, 0xeeeae0, 0x4fae6a])), x + w / 2, y, -8.92, null, false); x += w + 0.015; } });
+    // 오락기
+    box(0.8, 1.7, 0.8, M(0x5a3f8a), 4.3, 0, -3.1); box(0.6, 0.5, 0.03, screenMat('bars', 0xff7fd8), 4.3, 1.05, -3.52, null, false);
+    box(0.7, 0.08, 0.3, mats.dark, 4.3, 0.85, -3.6); ball(0.05, mats.red, 4.15, 0.98, -3.6, null, false); cyl(0.04, 0.04, 0.03, mats.hazard, 4.45, 0.93, -3.6, null, false, 8);
+    plant(4.2, -9.0);
+    cyl(0.03, 0.03, 1.5, mats.dark, 2.7, 0, -9.05, null, false, 6); cyl(0.14, 0.24, 0.3, pulse(glow(0xffd9a0, 1.4), 0.15, 0.6), 2.7, 1.5, -9.05, null, false);   // 스탠드 조명
+    roomLight(0xffc98a, 0, -6, 0.75);
+    label('L-04', 'LOUNGE', '휴게실', -2.5, -2.3);
+  })();
+
+  /* ----- 선실 (crew quarters) ----- */
+  (function () {
+    const r = room('quarters', 'A', [9.5, 0], [9.5, -2.6]);
+    S(r, 6.2, -7.3, PZ, { pose: 'lie', h: 0.55, via: [[6.2, -6.2]] });
+    S(r, 10.6, -7.3, PZ, { pose: 'lie', h: 0.55, via: [[10.6, -6.2]] });
+    S(r, 12.4, -4.6, PX, { pose: 'sit', h: 0.45 });
+    const blankets = [0x5f7fd8, 0xd8795f, 0x5fb89a, 0xd8b85f];
+    const rug = cyl(1.7, 1.7, 0.012, M(0x8a6fd8), 9.5, 0.002, -4.6, null, false, 32); rug.receiveShadow = true;
+    const rug2 = cyl(1.3, 1.3, 0.012, M(0xe6dcc0), 9.5, 0.008, -4.6, null, false, 32); rug2.receiveShadow = true;
+    const rug3 = cyl(0.8, 0.8, 0.012, M(0x8a6fd8), 9.5, 0.014, -4.6, null, false, 32); rug3.receiveShadow = true;
+    [6.2, 8.4, 10.6, 12.8].forEach((x, i) => {
+      box(1.2, 0.45, 2.0, mats.white, x, 0, -8.2); box(1.05, 0.1, 1.9, M(0xe6e2d6), x, 0.45, -8.2);
+      box(0.7, 0.1, 0.4, M(0xffffff), x, 0.55, -8.9); box(1.07, 0.06, 1.0, M(blankets[i]), x, 0.552, -7.8);
+      box(0.08, 1.35, 2.1, mats.trim, x - 0.68, 0, -8.25);
+      box(0.2, 0.06, 0.06, pulse(glow(0xffd9a0, 1.2), 0.2, 1), x, 1.2, -9.3, null, false);
+      box(0.5, 0.36, 0.03, M(pick([0xd8795f, 0x5f7fd8, 0x5fb89a, 0xe8c06a])), x + 0.2, 0.75, -9.32, null, false);    // 벽에 붙인 사진
+      box(0.16, 0.08, 0.26, mats.dark, x - 0.45, 0, -6.95, null, false); box(0.16, 0.08, 0.26, mats.dark, x - 0.25, 0, -6.98, null, false);   // 신발
+    });
+    box(0.08, 1.35, 2.1, mats.trim, 13.48, 0, -8.25);
+    // 침상에서 자는 고양이
+    cat = grp(8.4, 0.612, -7.8);
+    const fur = M(0xe89a4a);
+    const body = ball(0.17, fur, 0, 0.11, 0, cat); body.scale.set(1.5, 0.75, 1.05);
+    ball(0.11, fur, 0.24, 0.13, 0.08, cat);
+    [0.05, 0.13].forEach(dz => { const e = add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 4), fur), cat, false); e.position.set(0.26, 0.25, dz); });
+    cat.userData.body = body;
+    cat.userData.tail = grp(-0.22, 0.08, 0, cat);
+    const tail = cyl(0.03, 0.025, 0.34, fur, 0, 0, 0, cat.userData.tail, false, 6); tail.rotation.x = Math.PI / 2; tail.position.set(0, 0, 0.17);
+    // 책상
+    box(0.9, 0.72, 2.0, mats.wood, 13.3, 0, -4.6);
+    box(0.05, 0.5, 0.8, mats.dark, 13.62, 0.8, -4.6); box(0.02, 0.42, 0.72, screenMat('text', 0x9fe0ff), 13.58, 0.84, -4.6, null, false);
+    box(0.3, 0.03, 0.5, mats.dark, 13.15, 0.72, -4.6, null, false);
+    cyl(0.07, 0.06, 0.13, mats.red, 13.2, 0.72, -5.3, null, false, 10);
+    [0, 1, 2].forEach(i => box(0.3, 0.05, 0.22, M([0x3f6f7a, 0xc8553d, 0xe8c06a][i]), 13.3, 0.72 + i * 0.05, -3.9, null, false));
+    cyl(0.26, 0.22, 0.45, M(0x8d93a8), 12.4, 0, -4.6);
+    [-5.1, -4.3].forEach(z => { box(0.6, 1.9, 0.75, M(0x6b6f8a), 5.5, 0, z); box(0.03, 0.3, 0.08, mats.hazard, 5.82, 1.0, z); for (let k = 0; k < 3; k++) box(0.02, 0.03, 0.4, mats.dark, 5.81, 1.5 + k * 0.08, z, null, false); });   // 사물함
+    plant(13.4, -2.2, 0.8);
+    roomLight(0xc9a8ff, 9.5, -6, 0.6);
+    label('Q-05', 'CREW QUARTERS A', '선실 A', 7.5, -2.3);
+  })();
+
+  /* ----- 정수실 (water treatment) ----- */
+  (function () {
+    const r = room('water', 'A', [-9.5, 0], [-9.5, 2.6]);
+    S(r, -12.2, 6.2, PZ); S(r, -6.8, 6.2, PZ);
+    consoleUnit(S(r, -12.2, 4, NX), 1.8, 0x58d6ff, 1.05, 'wave');
+    S(r, -6.9, 4.2, PX);
+    const water = new THREE.MeshStandardMaterial({ color: 0x2a9fd8, emissive: 0x0a4a7a, emissiveIntensity: 0.9, transparent: true, opacity: 0.7, depthWrite: false });
+    const bub = new THREE.MeshBasicMaterial({ color: 0xe8fbff });
+    [-12.2, -9.5, -6.8].forEach((x, i) => {
+      const lvl = [1.9, 1.3, 2.2][i];
+      cyl(1.2, 1.25, 0.3, mats.dark, x, 0, 7.9);
+      cyl(1.0, 1.0, lvl, water, x, 0.3, 7.9, null, false, 24);
+      cyl(1.1, 1.1, 2.6, mats.glass, x, 0.3, 7.9, null, false, 24);
+      cyl(1.16, 1.16, 0.18, mats.steel, x, 2.9, 7.9);
+      [1.0, 1.9].forEach(y => cyl(1.13, 1.13, 0.06, mats.steel, x, y, 7.9, null, false, 24));
+      for (let b = 0; b < 5; b++) {
+        const m = ball(0.06 + rnd() * 0.04, bub, x, 0.5, 7.9, null, false);
+        bubbles.push({ mesh: m, cx: x, cz: 7.9, top: 0.3 + lvl, off: rnd(), ang: rnd() * 6.28, rad: 0.2 + rnd() * 0.6, speed: 0.25 + rnd() * 0.3 });
+      }
+      cyl(0.1, 0.1, 0.5, mats.steel, x, 3.05, 7.9);
+      // 수위 표시등과 압력계
+      box(0.1, lvl * 0.9, 0.04, pulse(glow(0x58d6ff, 1.2), 0.3, 1.5), x + 0.5, 0.35, 6.74, null, false);
+      const gauge = cyl(0.16, 0.16, 0.05, mats.white, x - 0.3, 0, 6.72, null, false, 14); gauge.rotation.x = Math.PI / 2; gauge.position.y = 0.16;
+      const needle = box(0.02, 0.11, 0.02, mats.red, x - 0.3, 0.16, 6.69, null, false); needle.rotation.z = (i - 1) * 0.8;
+      const valve = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.035, 6, 14), mats.red); valve.position.set(x, 3.52, 7.9); valve.rotation.x = Math.PI / 2; add(valve, null, false);
+      valve.position.y = 3.68;
+    });
+    const pipe = cyl(0.11, 0.11, 6.6, mats.steel, -9.5, 0, 7.9); pipe.rotation.z = Math.PI / 2; pipe.position.y = 3.5;
+    const pipe2 = cyl(0.11, 0.11, 4.6, M(0x4aa8d8), -13.4, 0, 6.2); pipe2.rotation.x = Math.PI / 2; pipe2.position.y = 0.35;
+    // 순환 펌프
+    box(1.0, 0.7, 1.4, mats.steel, -5.8, 0, 4.2); box(1.06, 0.1, 1.46, mats.dark, -5.8, 0, 4.2, null, false);
+    const wheel = grp(-6.32, 0.75, 4.2);
+    const wg = cyl(0.42, 0.42, 0.1, M(0x4aa8d8), 0, -0.05, 0, wheel); wg.rotation.z = Math.PI / 2;
+    box(0.12, 0.08, 0.8, mats.hazard, 0, -0.04, 0, wheel); box(0.12, 0.8, 0.08, mats.hazard, 0, -0.4, 0, wheel);
+    spinners.push({ obj: wheel, axis: 'x', speed: 3 });
+    [6.0, 2.5].forEach(z => { cyl(0.3, 0.3, 1.5, M(0x7fbfae), -5.8, 0, z); cyl(0.31, 0.31, 0.08, mats.steel, -5.8, 1.0, z, null, false); ball(0.3, M(0x7fbfae), -5.8, 1.5, z); });   // 필터 통
+    // 바닥 배수구와 고인 물
+    decal(1.6, 1.0, mats.dark, -9.5, 5.0);
+    for (let i = 0; i < 6; i++) decal(0.1, 0.9, mats.steel, -10.15 + i * 0.26, 5.0, 0.012);
+    const puddle = cyl(0.55, 0.55, 0.01, new THREE.MeshStandardMaterial({ color: 0x6fc8f0, transparent: true, opacity: 0.45, roughness: 0.1, depthWrite: false }), -7.9, 0.004, 6.6, null, false, 20);
+    box(0.5, 0.5, 0.03, mats.hazard, -13.6, 0.9, 2.2, null, false);
+    roomLight(0x58c8ff, -9.5, 5.5, 0.8);
+    label('W-06', 'WATER RECLAMATION', '정수실', -11.4, 2.3);
+  })();
+
+  /* ----- 창고 (storage) ----- */
+  (function () {
+    const r = room('storage', 'A', [0, 0], [0, 2.6]); r.cargo = true;
+    S(r, -2.6, 5, NX); S(r, 2.6, 5.2, PX); S(r, 0, 7.3, PZ);
+    const cm = [M(0xc9953f), M(0x4f8f8a), M(0x8d93a8), M(0xb5653f)];
+    // 상자 뚜껑·바닥 테두리는 본체 면과 겹치지 않게 살짝 띄운다 (z-fighting 방지)
+    function crate(x, y, z, s, m, face) {
+      box(s, s, s, m, x, y, z);
+      box(s + 0.06, 0.08, s + 0.06, mats.dark, x, y + s - 0.05, z);
+      box(s + 0.06, 0.08, s + 0.06, mats.dark, x, y + 0.02, z);
+      box(0.02, s * 0.3, s * 0.45, mats.white, x + face * (s / 2 + 0.006), y + s * 0.4, z, null, false);     // 화물 라벨
+      box(0.02, s * 0.1, s * 0.1, mats.hazard, x + face * (s / 2 + 0.007), y + s * 0.72, z + s * 0.25, null, false);
+      return s + 0.03;                                        // 위에 쌓을 높이
+    }
+    const pallet = (x, z) => { box(1.4, 0.1, 1.25, mats.wood, x, 0, z); };
+    for (let z = 3.9; z < 8; z += 1.3) {
+      const s1 = 1.0 + rnd() * 0.18, s2 = 1.0 + rnd() * 0.18;
+      pallet(-4.15, z); const h1 = crate(-4.15, 0.1, z, s1, pick(cm), 1);
+      if (rnd() < 0.6) crate(-4.15 + (rnd() - 0.5) * 0.15, 0.1 + h1, z, 0.8, pick(cm), 1);
+      if (z < 7) { pallet(4.15, z); const h2 = crate(4.15, 0.1, z, s2, pick(cm), -1); if (rnd() < 0.6) crate(4.1, 0.1 + h2, z, 0.75, pick(cm), -1); }
+    }
+    crate(-2.9, 0, 7.4, 0.9, cm[1], 1);
+    // 선반
+    [-3, 0, 3].forEach(x => box(0.1, 1.9, 0.8, mats.steel, x, 0, 8.9));
+    [0.6, 1.25, 1.87].forEach(y => box(6.1, 0.07, 0.8, mats.steel, 0, y, 8.9));
+    for (let x = -2.6; x < 2.8; x += 0.75) [0.67, 1.32].forEach(y => { if (rnd() < 0.85) box(0.45 + rnd() * 0.15, 0.3 + rnd() * 0.2, 0.5, pick(cm), x, y, 8.9); });
+    [-2.2, -0.8, 1.4].forEach(x => cyl(0.16, 0.16, 0.3, M(0x4fb8c8), x, 1.94, 8.9));
+    [[4.15, 7.9], [4.2, 8.75], [3.45, 8.7]].forEach(p => { cyl(0.33, 0.33, 0.9, M(0x3f6fb5), p[0], 0, p[1]); cyl(0.345, 0.345, 0.06, mats.hazard, p[0], 0.6, p[1], null, false); });
+    // 적재 구역 표시선
+    decal(0.08, 5.2, mats.hazard, -3.25, 5.85); decal(0.08, 4.0, mats.hazard, 3.25, 5.25);
+    // 지게차 로봇
+    forkLift = grp(1.9, 0, 7.5); forkLift.rotation.y = Math.PI / 2;
+    box(0.9, 0.5, 1.1, mats.hazard, 0, 0.12, -0.2, forkLift); box(0.7, 0.3, 0.5, mats.dark, 0, 0.62, -0.4, forkLift);
+    [[-0.46, -0.5], [0.46, -0.5], [-0.46, 0.2], [0.46, 0.2]].forEach(p => { const w = cyl(0.16, 0.16, 0.12, mats.dark, p[0], 0, p[1], forkLift, false, 12); w.rotation.z = Math.PI / 2; w.position.y = 0.16; });
+    [-0.3, 0.3].forEach(x => box(0.07, 1.6, 0.07, mats.steel, x, 0.1, 0.4, forkLift));
+    ball(0.08, pulse(glow(0xffa24a, 1.8), 1.6, 5), 0, 0.98, -0.4, forkLift, false);
+    forkLift.userData.fork = grp(0, 0.2, 0.45, forkLift);
+    [-0.25, 0.25].forEach(x => box(0.1, 0.05, 0.8, mats.steel, x, 0, 0.4, forkLift.userData.fork));
+    box(0.7, 0.3, 0.06, mats.steel, 0, 0, 0.02, forkLift.userData.fork);
+    box(0.6, 0.5, 0.6, cm[0], 0, 0.06, 0.45, forkLift.userData.fork); box(0.64, 0.06, 0.64, mats.dark, 0, 0.52, 0.45, forkLift.userData.fork);
+    extinguisher(4.6, 2.0);
+    roomLight(0xffe2a8, 0, 5.5, 0.6);
+    label('C-07', 'CARGO HOLD A', '창고 A', -2.5, 2.3);
+  })();
+
+  /* ----- 의무실 (medbay) ----- */
+  (function () {
+    const r = room('medbay', 'A', [9.5, 0], [9.5, 2.6]);
+    S(r, 6.8, 7.15, NZ, { pose: 'lie', h: 0.62, via: [[6.8, 6.2]] });
+    S(r, 8.1, 8.1, NX); S(r, 10.6, 8.1, PX);
+    consoleUnit(S(r, 12.45, 4.4, PX), 2.0, 0x7dffd0, 1.0, 'wave');
+    const mint = M(0xa8e0cf), green = glow(0x4dff9a, 1.2);
+    [6.8, 11.9].forEach((x, i) => {
+      box(1.2, 0.5, 2.2, mats.white, x, 0, 8.1); box(1.26, 0.1, 2.26, mats.steel, x, 0.06, 8.1, null, false);
+      box(1.0, 0.12, 2.0, mint, x, 0.5, 8.1); box(0.7, 0.1, 0.4, M(0xffffff), x, 0.62, 8.85);
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.07, 8, 20, Math.PI), i ? pulse(glow(0x58ffd0, 1.5), 0.5, 4) : mats.steel);
+      arch.position.set(x, 0.5, 8.1); root.add(arch);
+      if (i) scanner = arch;
+    });
+    // 생체 신호 모니터
+    cyl(0.04, 0.04, 1.3, mats.steel, 5.7, 0, 8.6, null, false, 6); box(0.08, 0.5, 0.7, mats.dark, 5.7, 1.2, 8.6);
+    box(0.02, 0.42, 0.62, screenMat('wave', 0x7dffb0), 5.75, 1.24, 8.6, null, false);
+    box(0.05, 1.5, 2.3, new THREE.MeshStandardMaterial({ color: 0x8fd8c8, transparent: true, opacity: 0.45, depthWrite: false }), 9.35, 0.1, 8.2, null, false);   // 커튼
+    cyl(0.03, 0.03, 1.7, mats.steel, 9.35, 0, 7.05, null, false, 6);
+    box(0.6, 1.8, 2.4, mats.white, 5.5, 0, 5.0);                                             // 약품장
+    box(0.04, 0.5, 0.14, green, 5.82, 1.0, 5.0, null, false); box(0.04, 0.14, 0.5, green, 5.83, 1.18, 5.0, null, false);
+    cyl(0.03, 0.03, 1.9, mats.steel, 7.75, 0, 8.9); ball(0.12, M(0xbfe8ff), 7.75, 1.8, 8.9);   // 수액 거치대
+    // 세면대와 의료 카트
+    box(2.4, 0.9, 0.6, mats.white, 12.3, 0, 2.1); box(0.8, 0.04, 0.4, mats.steel, 12.6, 0.9, 2.1, null, false);
+    cyl(0.03, 0.03, 0.25, mats.steel, 12.6, 0.9, 1.92, null, false, 6);
+    [11.4, 11.65, 11.9].forEach((x, i) => cyl(0.06, 0.06, 0.18 + i * 0.04, [mats.red, M(0x4aa8d8), mint][i], x, 0.9, 2.1, null, false, 10));
+    box(0.6, 0.06, 0.45, mats.steel, 9.3, 0.7, 5.4); cyl(0.03, 0.03, 0.7, mats.steel, 9.3, 0, 5.4, null, false, 6); cyl(0.2, 0.2, 0.04, mats.dark, 9.3, 0, 5.4, null, false);
+    box(0.25, 0.05, 0.18, mats.white, 9.25, 0.76, 5.4, null, false); cyl(0.04, 0.04, 0.12, mats.red, 9.5, 0.76, 5.5, null, false, 8);
+    cyl(0.24, 0.2, 0.45, mats.white, 8.9, 0, 6.9);
+    decal(0.9, 0.28, M(0x7dd8b0), 9.5, 4.0); decal(0.28, 0.9, M(0x7dd8b0), 9.5, 4.0, 0.0045);   // 바닥 십자 표시
+    roomLight(0xa8ffe6, 9.5, 6, 0.7);
+    label('M-08', 'MEDBAY', '의무실', 7.5, 2.3);
+  })();
+
+  /* ---------- 외곽 구획 (북쪽 B 복도 / 남쪽 C 복도) ---------- */
+  // 로컬 좌표: lx 0..8.5 (문에서 볼 때 좌→우), lz 0..8 (문에서 안쪽으로). 문은 (4.25, 0).
+  function outerRoom(id, x0, north, code, en, ko, lightColor, build, o) {
+    o = o || {}; const W = o.w || 8.5, ZW = o.zw || 12.5, D = o.door || W / 2;   // 방 너비, 문이 난 벽의 z, 문 위치
+    const T = north ? (lx, lz) => [x0 + W - lx, -ZW - lz] : (lx, lz) => [x0 + lx, ZW + lz];
+    const r = room(id, o.line || (north ? 'B' : 'C'), [T(D, 0)[0], 0], T(D, 1.1));
+    root = grp(north ? x0 + W : x0, 0, north ? -ZW : ZW, ship); rot = north ? Math.PI : 0; root.rotation.y = rot;
+    const St = (lx, lz, face, o) => {
+      o = Object.assign({}, o || {});
+      if (o.via) o.via = o.via.map(v => T(v[0], v[1]));
+      const p = T(lx, lz), st = S(r, p[0], p[1], face + rot, o);
+      st.lx = lx; st.lz = lz; st.lface = face; return st;
+    };
+    build(r, St);
+    if (lightColor) roomLight(lightColor, W / 2, 4.5, 0.65);
+    const lp = T(north ? D + 1.85 : D - 1.85, 0.85);
+    root = ship; rot = 0;
+    label(code, en, ko, lp[0], lp[1]);
+  }
+  const cratePal = [M(0xc9953f), M(0x4f8f8a), M(0x8d93a8), M(0xb5653f)];
+  const robotSkin = M(0xcfd3dc, { metalness: 0.5, roughness: 0.4 });
+
+  function bunk(lx, lz, color) {                  // 머리는 +lz 쪽
+    box(1.2, 0.45, 2.0, mats.white, lx, 0, lz); box(1.05, 0.1, 1.9, M(0xe6e2d6), lx, 0.45, lz);
+    box(0.7, 0.1, 0.4, M(0xffffff), lx, 0.55, lz + 0.7); box(1.07, 0.06, 1.0, M(color), lx, 0.552, lz - 0.4);
+    box(0.08, 1.35, 2.1, mats.trim, lx - 0.68, 0, lz + 0.02);
+    box(0.2, 0.06, 0.06, pulse(glow(0xffd9a0, 1.2), 0.2, 1), lx, 1.2, lz + 1.08, null, false);
+    box(0.5, 0.36, 0.03, M(pick([0xd8795f, 0x5f7fd8, 0x5fb89a, 0xe8c06a])), lx + 0.2, 0.75, lz + 1.1, null, false);
+    box(0.16, 0.08, 0.26, mats.dark, lx - 0.45, 0, lz - 1.25, null, false); box(0.16, 0.08, 0.26, mats.dark, lx - 0.25, 0, lz - 1.22, null, false);
+  }
+  function quartersRoom(pal) {
+    return (r, St) => {
+      [1.35, 4.25, 7.15].forEach((lx, i) => bunk(lx, 6.8, pal[i]));
+      box(0.08, 1.35, 2.1, mats.trim, 7.83, 0, 6.82);
+      St(1.35, 5.75, NZ, { pose: 'lie', h: 0.55, via: [[1.35, 4.7]] });
+      St(7.15, 5.75, NZ, { pose: 'lie', h: 0.55, via: [[7.15, 4.7]] });
+      cyl(1.5, 1.5, 0.012, M(pal[0]), 4.25, 0.002, 3.7, null, false, 32).receiveShadow = true;
+      cyl(1.05, 1.05, 0.012, M(0xe6dcc0), 4.25, 0.008, 3.7, null, false, 32).receiveShadow = true;
+      box(0.8, 0.72, 1.8, mats.wood, 0.65, 0, 3.4);                                          // 책상
+      box(0.05, 0.45, 0.7, mats.dark, 0.32, 0.78, 3.4); box(0.02, 0.38, 0.62, screenMat('text', 0x9fe0ff), 0.36, 0.81, 3.4, null, false);
+      cyl(0.07, 0.06, 0.13, mats.red, 0.7, 0.72, 2.8, null, false, 10);
+      [0, 1].forEach(i => box(0.3, 0.05, 0.22, M([0x3f6f7a, 0xe8c06a][i]), 0.7, 0.72 + i * 0.05, 4.0, null, false));
+      cyl(0.26, 0.22, 0.45, M(0x8d93a8), 1.6, 0, 3.4);
+      St(1.6, 3.4, NX, { pose: 'sit', h: 0.45 });
+      [2.6, 3.4].forEach(lz => { box(0.6, 1.9, 0.75, M(0x6b6f8a), 7.95, 0, lz); box(0.03, 0.3, 0.08, mats.hazard, 7.63, 1.0, lz, null, false); });   // 사물함
+      St(6.9, 3.0, PX);
+      plant(7.9, 4.7, 0.7);
+    };
+  }
+
+  /* ----- 보전반 (maintenance) ----- */
+  outerRoom('maint', -17, true, 'N-09', 'MAINTENANCE', '보전반', 0xffc98a, (r, St) => {
+    box(5, 0.9, 0.8, mats.steel, 4.25, 0, 7.35); box(5.1, 0.06, 0.86, mats.wood, 4.25, 0.9, 7.35);   // 작업대
+    box(5, 1.1, 0.06, mats.dark, 4.25, 0.96, 7.74);                                                  // 공구 걸이판
+    for (let i = 0; i < 9; i++) box(0.08 + (i % 3) * 0.04, 0.3 + (i % 4) * 0.12, 0.03, [mats.red, mats.steel, mats.hazard][i % 3], 2.1 + i * 0.54, 1.25, 7.7, null, false);
+    box(0.3, 0.2, 0.3, mats.dark, 2.4, 0.96, 7.3); box(0.5, 0.1, 0.12, mats.steel, 2.4, 1.16, 7.3, null, false);   // 바이스
+    const part = cyl(0.3, 0.3, 0.7, mats.steel, 5.7, 0.96, 7.3); part.rotation.z = Math.PI / 2; part.position.y = 1.26;
+    box(0.4, 0.05, 0.3, mats.white, 3.4, 0.96, 7.4, null, false);
+    sparkAt(4.5, 1.06, 7.2, root);
+    St(3.2, 6.35, PZ); St(5.4, 6.35, PZ);
+    box(0.7, 1.9, 3.2, mats.dark, 0.6, 0, 4.6);                                                      // 배전반
+    for (let i = 0; i < 12; i++) box(0.03, 0.07, 0.14, pulse(glow(pick([0x7dffb0, 0xffc46b, 0xff4a3d, 0x58d6ff]), 1.2), 1.0, 1 + rnd() * 6), 0.96, 0.5 + (i % 4) * 0.36, 3.5 + Math.floor(i / 4) * 0.5, null, false);
+    box(0.03, 0.55, 0.8, screenMat('bars', 0xffc46b), 0.96, 0.9, 5.5, null, false);
+    box(0.05, 0.9, 0.12, mats.hazard, 0.97, 0.3, 6.05, null, false);
+    St(1.75, 4.6, NX);
+    [3.0, 5.6].forEach(lz => box(0.7, 1.8, 0.08, mats.steel, 7.95, 0, lz));                          // 부품 선반
+    [0.5, 1.1, 1.72].forEach(y => { box(0.7, 0.06, 2.7, mats.steel, 7.95, y, 4.3); for (let k = 0; k < 4; k++) if (rnd() < 0.8) box(0.4, 0.2 + rnd() * 0.2, 0.45, pick(cratePal), 7.95, y + 0.06, 3.3 + k * 0.65, null, false); });
+    St(6.85, 4.3, PX);
+    box(0.8, 0.9, 0.6, mats.red, 0.75, 0, 7.3); [0.25, 0.5, 0.75].forEach(y => box(0.5, 0.03, 0.02, mats.steel, 0.75, y, 6.99, null, false));   // 공구함
+    [[7.6, 7.4, 0x4aa8d8], [7.95, 6.9, 0xe8873a]].forEach(g => { cyl(0.18, 0.18, 1.3, M(g[2]), g[0], 0, g[1]); cyl(0.06, 0.06, 0.15, mats.steel, g[0], 1.3, g[1], null, false, 8); });   // 가스통
+  });
+
+  /* ----- 로봇 수리시설 (robotics bay) ----- */
+  outerRoom('robotics', -8.5, true, 'R-10', 'ROBOTICS BAY', '로봇 수리실', 0x8fc8ff, (r, St) => {
+    [1.6, 4.25, 6.9].forEach((lx, i) => {                                                            // 충전 포드
+      cyl(0.62, 0.68, 0.12, mats.dark, lx, 0, 7.0); cyl(0.5, 0.5, 0.03, pulse(glow(0x58d6ff, 1.3), 0.6, 2), lx, 0.12, 7.0, null, false);
+      box(1.2, 2.0, 0.2, mats.steel, lx, 0, 7.68);
+      [-0.45, 0.45].forEach(dx => box(0.1, 1.6, 0.05, pulse(glow(0x7dffb0, 1.2), 0.6, 1.5 + i), lx + dx, 0.2, 7.56, null, false));
+      St(lx, 7.0, NZ, { robot: true, via: lx < 3 ? [[3.3, 5.6]] : [] });
+    });
+    box(0.9, 0.8, 2.0, mats.steel, 2.2, 0, 4.0); box(1.0, 0.06, 2.1, mats.dark, 2.2, 0.8, 4.0);      // 수리대와 분해된 로봇
+    box(0.45, 0.25, 0.6, robotSkin, 2.2, 0.86, 4.2); box(0.3, 0.26, 0.28, robotSkin, 2.2, 0.86, 4.85);
+    box(0.22, 0.08, 0.03, glow(0xff9d4a, 1.2), 2.2, 0.98, 5.0, null, false);
+    box(0.12, 0.12, 0.5, robotSkin, 2.52, 0.86, 4.2); box(0.15, 0.15, 0.55, robotSkin, 2.1, 0.86, 3.4); box(0.15, 0.15, 0.5, mats.dark, 2.35, 0.86, 3.25);
+    const base = grp(1.25, 0, 4.0); cyl(0.2, 0.26, 0.9, mats.hazard, 0, 0, 0, base);                 // 수리용 로봇 팔
+    const j1 = grp(0, 0.9, 0, base); box(0.14, 0.9, 0.14, mats.hazard, 0, 0, 0, j1); ball(0.12, mats.dark, 0, 0, 0, j1, false);
+    const j2 = grp(0, 0.9, 0, j1); box(0.11, 0.75, 0.11, mats.steel, 0, 0, 0, j2); ball(0.1, mats.dark, 0, 0, 0, j2, false);
+    sparkAt(0, 0.78, 0, j2);
+    armsAnim.push({ j1, j2 });
+    St(3.4, 4.0, NX);
+    consoleUnit(St(6.9, 3.6, PX), 1.8, 0x58d6ff, 0.95, 'text');
+    box(0.08, 1.5, 1.3, mats.dark, 8.27, 0.2, 5.6);                                                  // 예비 부품 걸이
+    [5.2, 5.6, 6.0].forEach((lz, i) => box(0.12, 0.5, 0.13, robotSkin, 8.16, 0.7 + (i % 2) * 0.3, lz, null, false));
+    [5.9, 6.5].forEach((lz, i) => { box(0.6, 0.45, 0.5, pick(cratePal), 0.6, 0, lz); box(0.3, 0.14, 0.3, robotSkin, 0.6, 0.45, lz, null, false); });
+    hoverers.push({ obj: makeDrone(0xffa24a, root), cx: 2.2, cz: 4.0, r: 1.0, y: 2.35, speed: 0.8 });   // 수리 드론
+  });
+
+  /* ----- 연구실 (lab) ----- */
+  outerRoom('lab', 0, true, 'S-11', 'SCIENCE LAB', '연구실', 0x9fffe0, (r, St) => {
+    box(6, 0.9, 0.8, mats.white, 4.25, 0, 7.35); box(6.1, 0.05, 0.86, mats.steel, 4.25, 0.9, 7.35);
+    [[1.9, 0x7dffb0], [2.35, 0xff7fd8], [6.1, 0x58d6ff], [6.55, 0xffc46b]].forEach(f => {            // 플라스크
+      cyl(0.04, 0.13, 0.24, pulse(glow(f[1], 0.9), 0.3, 1 + rnd() * 2), f[0], 0.95, 7.4, null, false, 10); cyl(0.035, 0.035, 0.12, mats.glass, f[0], 1.19, 7.4, null, false, 8);
+    });
+    box(0.22, 0.05, 0.28, mats.dark, 3.2, 0.95, 7.35, null, false); const sc = cyl(0.05, 0.05, 0.32, mats.dark, 3.2, 1.0, 7.4, null, false, 8); sc.rotation.x = -0.4;   // 현미경
+    cyl(0.26, 0.26, 0.2, mats.steel, 5.2, 0.95, 7.35);
+    const cf = grp(5.2, 1.16, 7.35); box(0.4, 0.03, 0.08, mats.hazard, 0, 0, 0, cf, false); box(0.08, 0.03, 0.4, mats.hazard, 0, 0.001, 0, cf, false); spinners.push({ obj: cf, axis: 'y', speed: 14 });   // 원심분리기
+    box(2.4, 0.95, 0.06, mats.dark, 4.25, 1.0, 7.76); box(2.2, 0.8, 0.02, screenMat('wave', 0x7dffb0), 4.25, 1.07, 7.72, null, false);
+    St(2.9, 6.35, PZ); St(5.5, 6.35, PZ);
+    const liquid = new THREE.MeshStandardMaterial({ color: 0x4dff9a, emissive: 0x1a8a4a, emissiveIntensity: 0.9, transparent: true, opacity: 0.55, depthWrite: false });
+    [3.0, 5.2].forEach((lz, i) => {                                                                  // 표본 탱크
+      cyl(0.62, 0.66, 0.25, mats.dark, 7.55, 0, lz); cyl(0.5, 0.5, 1.5, liquid, 7.55, 0.25, lz, null, false); cyl(0.56, 0.56, 1.6, mats.glass, 7.55, 0.25, lz, null, false);
+      cyl(0.6, 0.6, 0.12, mats.steel, 7.55, 1.85, lz);
+      const sp = ball(0.16, new THREE.MeshBasicMaterial({ color: 0xd8ffe8 }), 7.55, 1.0, lz, null, false); sp.scale.set(1, 1.3, 1);
+      bobbers.push({ mesh: sp, y: 1.0, amp: 0.25, speed: 0.9 + i * 0.4 });
+    });
+    St(6.5, 4.1, PX);
+    cyl(0.6, 0.7, 0.7, mats.dark, 1.2, 0, 4.1); cyl(0.48, 0.48, 0.04, pulse(glow(0x58d6ff, 1.4), 0.4, 2), 1.2, 0.7, 4.1, null, false);   // DNA 홀로그램
+    const helix = grp(1.2, 0.9, 4.1);
+    const hA = new THREE.MeshBasicMaterial({ color: 0x7fe6ff }), hB = new THREE.MeshBasicMaterial({ color: 0xff7fd8 });
+    for (let i = 0; i < 14; i++) { const a = i * 0.55; ball(0.045, hA, Math.cos(a) * 0.22, i * 0.085, Math.sin(a) * 0.22, helix, false); ball(0.045, hB, -Math.cos(a) * 0.22, i * 0.085, -Math.sin(a) * 0.22, helix, false); }
+    spinners.push({ obj: helix, axis: 'y', speed: 1.2 });
+    St(2.35, 4.1, NX);
+    box(0.8, 1.7, 0.7, mats.white, 0.65, 0, 6.6); box(0.03, 0.9, 0.06, mats.steel, 1.06, 0.5, 6.4, null, false); box(0.2, 0.1, 0.02, glow(0x58d6ff, 1), 0.65, 1.45, 6.24, null, false);   // 시료 냉장고
+  });
+
+  /* ----- 선실 B ----- */
+  outerRoom('quartersB', 8.5, true, 'Q-12', 'CREW QUARTERS B', '선실 B', 0xc9a8ff, quartersRoom([0x5fb89a, 0xd8b85f, 0x5f7fd8]));
+
+  /* ----- 창고 B (cargo hold B) ----- */
+  outerRoom('cargoB', -17, false, 'C-13', 'CARGO HOLD B', '창고 B', 0xffe2a8, (r, St) => {
+    r.cargo = true;
+    [2.4, 3.7, 5.0, 6.3].forEach(lz => {
+      box(1.4, 0.1, 1.2, mats.wood, 0.95, 0, lz); const h1 = crateBox(0.95, 0.1, lz, 1.0 + rnd() * 0.15, pick(cratePal), 1);
+      if (rnd() < 0.6) crateBox(0.95, 0.1 + h1, lz, 0.78, pick(cratePal), 1);
+      box(1.4, 0.1, 1.2, mats.wood, 7.55, 0, lz); const h2 = crateBox(7.55, 0.1, lz, 1.0 + rnd() * 0.15, pick(cratePal), -1);
+      if (rnd() < 0.6) crateBox(7.55, 0.1 + h2, lz, 0.75, pick(cratePal), -1);
+    });
+    [1.6, 4.25, 6.9].forEach(lx => box(0.1, 1.9, 0.8, mats.steel, lx, 0, 7.4));                      // 선반
+    [0.6, 1.25, 1.87].forEach(y => box(5.4, 0.07, 0.8, mats.steel, 4.25, y, 7.4));
+    for (let lx = 2.0; lx < 6.7; lx += 0.75) [0.67, 1.32].forEach(y => { if (rnd() < 0.85) box(0.45 + rnd() * 0.15, 0.3 + rnd() * 0.2, 0.5, pick(cratePal), lx, y, 7.4); });
+    St(2.15, 4.4, NX); St(6.35, 3.2, PX); St(4.25, 6.4, PZ);
+    decal(0.08, 4.6, mats.hazard, 1.85, 4.35); decal(0.08, 4.6, mats.hazard, 6.65, 4.35);
+    cyl(0.75, 0.75, 0.03, mats.dark, 5.7, 0.002, 5.6, null, false, 24);                              // 화물 드론 패드
+    const pr = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.66, 32), mats.hazard); pr.rotation.x = -Math.PI / 2; pr.position.set(5.7, 0.04, 5.6); root.add(pr);
+    const cd = makeDrone(0x7dffb0, root); cd.position.set(5.7, 1.5, 5.6); cd.scale.setScalar(1.3);
+    box(0.4, 0.34, 0.4, cratePal[0], 0, -0.52, 0, cd); box(0.02, 0.2, 0.02, mats.dark, 0, -0.2, 0, cd, false);
+    lifters.push({ obj: cd, lo: 0.75, hi: 2.4, speed: 0.6 });
+  });
+
+  /* ----- 식당 (mess hall) ----- */
+  outerRoom('mess', -8.5, false, 'G-14', 'MESS HALL', '식당', 0xffc98a, (r, St) => {
+    box(1.1, 0.08, 3.4, mats.wood, 4.25, 0.7, 4.5); [3.1, 5.9].forEach(lz => box(0.9, 0.7, 0.12, mats.dark, 4.25, 0, lz));   // 긴 식탁
+    [3.25, 5.25].forEach(lx => box(0.45, 0.45, 3.2, M(0x3f6f7a), lx, 0, 4.5));                       // 벤치
+    St(3.25, 3.5, PX, { pose: 'sit', h: 0.45, via: [[2.5, 2.2], [2.5, 3.5]] });
+    St(3.25, 5.5, PX, { pose: 'sit', h: 0.45, via: [[2.5, 2.2], [2.5, 5.5]] });
+    St(5.25, 4.5, NX, { pose: 'sit', h: 0.45, via: [[6.0, 2.2], [6.0, 4.5]] });
+    St(5.25, 3.3, NX, { pose: 'sit', h: 0.45, via: [[6.0, 2.2], [6.0, 3.3]] });
+    [[3.95, 3.5], [3.95, 5.5], [4.55, 4.5], [4.55, 3.3]].forEach((p, i) => {                         // 식판
+      box(0.36, 0.03, 0.28, mats.steel, p[0], 0.78, p[1], null, false);
+      ball(0.06, M([0xe8503a, 0x7fcf5e, 0xe8c06a, 0xf0c8a0][i]), p[0] - 0.06, 0.84, p[1], null, false); cyl(0.045, 0.04, 0.1, mats.white, p[0] + 0.1, 0.81, p[1] + 0.06, null, false, 8);
+    });
+    box(5.6, 0.9, 0.7, mats.white, 3.9, 0, 7.45); box(5.64, 0.05, 0.74, mats.wood, 3.9, 0.9, 7.45);  // 조리대
+    box(0.9, 0.03, 0.5, mats.dark, 3.0, 0.95, 7.45, null, false);
+    [2.8, 3.2].forEach(lx => cyl(0.12, 0.12, 0.02, pulse(glow(0xff7a3a, 1.4), 0.5, 3), lx, 0.98, 7.45, null, false, 12));
+    cyl(0.17, 0.17, 0.2, mats.steel, 2.8, 1.0, 7.45);
+    for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, depthWrite: false })); root.add(m); puffs.push({ mesh: m, x: 2.8, y: 1.25, z: 7.45, rise: 0.9, sc: 0.35, off: i / 3, dx: 0.15, dz: 0.1 }); }
+    box(0.5, 0.04, 0.4, mats.steel, 5.2, 0.95, 7.45, null, false); cyl(0.03, 0.03, 0.22, mats.steel, 5.2, 0.95, 7.68, null, false, 6);
+    [4.2, 4.45].forEach((lx, i) => cyl(0.07, 0.07, 0.2 + i * 0.06, [mats.red, mats.hazard][i], lx, 0.95, 7.55, null, false, 8));
+    box(0.9, 1.9, 0.7, mats.steel, 7.7, 0, 7.45); box(0.04, 0.8, 0.04, mats.dark, 7.35, 0.7, 7.08, null, false);   // 냉장고
+    St(4.25, 6.65, PZ, { via: [[2.5, 2.2], [2.5, 6.65]] });
+    box(0.6, 1.7, 1.0, M(0x3f6f7a), 7.95, 0, 3.2); box(0.03, 0.5, 0.7, pulse(glow(0xffb347, 1.2), 0.3, 2), 7.64, 0.9, 3.2, null, false);   // 음료 디스펜서
+    St(6.95, 3.2, PX);
+    plant(0.7, 7.3, 0.9);
+    box(0.04, 0.6, 1.6, screenMat('text', 0xffc46b), 0.18, 0.75, 4.5, null, false);                  // 식단 게시판
+  });
+
+  /* ----- 체력단련실 (gym) ----- */
+  outerRoom('gym', 0, false, 'F-15', 'FITNESS', '체력단련실', 0x8fc8ff, (r, St) => {
+    [2.0, 4.0].forEach((lx, i) => {                                                                  // 러닝머신
+      box(0.9, 0.2, 1.9, mats.dark, lx, 0, 6.5); box(0.7, 0.02, 1.6, M(0x4a5066), lx, 0.2, 6.5, null, false);
+      [-0.4, 0.4].forEach(dx => box(0.07, 1.1, 0.07, mats.steel, lx + dx, 0.2, 7.35));
+      box(0.9, 0.3, 0.07, mats.dark, lx, 1.2, 7.38); box(0.7, 0.22, 0.02, screenMat('bars', i ? 0x7dffb0 : 0xff9d4a), lx, 1.24, 7.33, null, false);
+      St(lx, 6.4, PZ, { pose: 'run', h: 0.21 });
+    });
+    box(0.05, 1.25, 4.2, glow(0xbfe0ff, 0.32), 0.19, 0.2, 4.7, null, false);                         // 거울
+    cyl(0.07, 0.09, 2.3, mats.steel, 0.9, 0, 3.4); box(1.0, 0.08, 0.08, mats.steel, 1.35, 2.25, 3.4);   // 샌드백
+    const bag = grp(1.8, 2.25, 3.4); cyl(0.02, 0.02, 0.35, mats.dark, 0, -0.35, 0, bag, false, 6); cyl(0.23, 0.23, 0.95, M(0xc8553d), 0, -1.3, 0, bag);
+    swayers.push({ obj: bag, amp: 0.12, speed: 2.3 });
+    St(2.65, 3.4, NX);
+    box(0.5, 0.7, 2.0, mats.dark, 8.0, 0, 3.6);                                                      // 덤벨 거치대
+    [2.9, 3.4, 3.9, 4.4].forEach((lz, i) => { const d = cyl(0.05, 0.05, 0.34, mats.steel, 8.0, 0.74, lz, null, false, 8); d.rotation.z = Math.PI / 2; d.position.y = 0.8;
+      [-0.14, 0.14].forEach(dx => { const p = cyl(0.1 + i * 0.012, 0.1 + i * 0.012, 0.07, M([0xe8873a, 0x3f7fd8, 0x4fae6a, 0xc8553d][i]), 8.0 + dx, 0, lz, null, false, 12); p.rotation.z = Math.PI / 2; p.position.y = 0.8; }); });
+    St(7.0, 3.6, PX);
+    box(0.5, 0.45, 1.7, M(0x3f6f7a), 6.6, 0, 6.35);                                                  // 벤치 프레스
+    [6.05, 7.15].forEach(lx => box(0.07, 1.25, 0.07, mats.steel, lx, 0, 6.85));
+    const bar = cyl(0.03, 0.03, 1.7, mats.steel, 6.6, 0, 6.85, null, false, 8); bar.rotation.z = Math.PI / 2; bar.position.y = 1.24;
+    [-0.72, 0.72].forEach(dx => { const p = cyl(0.22, 0.22, 0.1, mats.dark, 6.6 + dx, 0, 6.85, null, false, 16); p.rotation.z = Math.PI / 2; p.position.y = 1.24; });
+    St(6.6, 5.5, NZ, { pose: 'lie', h: 0.45, press: true, via: [[6.6, 4.7]] });
+    cyl(0.3, 0.3, 1.1, M(0x9fdcff), 0.7, 0, 7.3); cyl(0.32, 0.32, 0.5, mats.white, 0.7, 0, 7.3);     // 정수기
+  });
+
+  /* ----- 선실 C ----- */
+  outerRoom('quartersC', 8.5, false, 'Q-16', 'CREW QUARTERS C', '선실 C', 0xffb8d8, quartersRoom([0xd8795f, 0x5f7fd8, 0xd8b85f]));
+
+  /* ---------- 선수·선미 구획 (중앙 복도 A에 면한 방) ---------- */
+  // 로컬 좌표: lx 0..w, lz 0..9.5 (문에서 안쪽으로). 문은 (w/2, 0).
+  const aRoom = (id, x0, w, north, code, en, ko, light, build) => outerRoom(id, x0, north, code, en, ko, light, build, { line: 'A', zw: 1.5, w });
+
+  // 함재기: 삼각 날개, 쌍발 엔진, 기체마다 다른 식별색
+  function makeFighter(accent, parent) {
+    const f = grp(0, 0, 0, parent), body = M(0xd9dde4), acc = M(accent);
+    box(0.9, 0.5, 3.0, body, 0, 0.35, -0.2, f);
+    const nose = cyl(0.03, 0.42, 1.5, body, 0, 0, 0, f, true, 8); nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.6, 2.05);
+    box(0.5, 0.28, 1.0, glow(0x6fb6ff, 0.7), 0, 0.85, 0.6, f, false);
+    box(3.4, 0.08, 1.3, body, 0, 0.5, -0.9, f);
+    [-1, 1].forEach(sd => {
+      box(0.5, 0.09, 1.32, acc, sd * 1.46, 0.5, -0.9, f, false);
+      box(0.08, 0.7, 0.8, acc, sd * 0.45, 0.85, -1.35, f);
+      const e = cyl(0.24, 0.3, 0.7, mats.dark, sd * 0.28, 0, 0, f, true, 10); e.rotation.x = Math.PI / 2; e.position.set(sd * 0.28, 0.6, -1.95);
+      const g = cyl(0.19, 0.19, 0.04, glow(0xffa24a, 1.6), 0, 0, 0, f, false, 10); g.rotation.x = Math.PI / 2; g.position.set(sd * 0.28, 0.6, -2.32);
+      box(0.1, 0.35, 0.1, mats.dark, sd * 0.6, 0, -0.9, f, false);
+      const ms = cyl(0.06, 0.06, 0.8, mats.white, 0, 0, 0, f, false, 6); ms.rotation.x = Math.PI / 2; ms.position.set(sd * 1.05, 0.42, -0.8);
+    });
+    box(0.3, 0.02, 2.0, acc, 0, 0.85, -0.7, f, false);
+    box(0.1, 0.35, 0.1, mats.dark, 0, 0, 1.0, f, false);
+    f.rotation.order = 'YXZ';
+    return f;
+  }
+
+  /* ----- 무기고 (armory) ----- */
+  aRoom('armory', 17, 10, true, 'X-17', 'ARMORY', '무기고', 0xff8a6a, (r, St) => {
+    const gun = M(0x3a4048), olive = M(0x55633f);
+    box(8.4, 1.5, 0.12, mats.dark, 5, 0.3, 9.26);                                                    // 총기 거치대
+    box(8.4, 0.08, 0.3, mats.steel, 5, 0.3, 9.1, null, false);
+    for (let i = 0; i < 12; i++) {
+      const x = 1.3 + i * 0.67;
+      box(0.1, 0.95, 0.1, gun, x, 0.65, 9.12, null, false); box(0.12, 0.3, 0.16, mats.wood, x, 0.4, 9.1, null, false);
+      box(0.05, 0.05, 0.05, glow(0x7dffb0, 1), x, 1.62, 9.14, null, false);
+    }
+    St(3.2, 8.2, PZ, { via: [[2.9, 3.2]] }); St(6.8, 8.2, PZ, { via: [[7.1, 3.2]] });
+    [2.6, 3.8, 5.0].forEach(lz => {                                                                  // 방호복 보관함
+      box(0.7, 2.0, 1.0, M(0x5a6072), 0.6, 0, lz); box(0.03, 1.2, 0.5, glow(0x9fdcff, 0.4), 0.96, 0.5, lz, null, false);
+      box(0.04, 0.12, 1.0, mats.red, 0.97, 1.75, lz, null, false);
+    });
+    St(1.9, 3.8, NX);
+    box(2.6, 0.08, 1.2, mats.steel, 5, 0.8, 5);                                                      // 정비 탁자
+    [[3.9, 4.5], [6.1, 4.5], [3.9, 5.5], [6.1, 5.5]].forEach(p => box(0.1, 0.8, 0.1, mats.dark, p[0], 0, p[1], null, false));
+    box(1.1, 0.1, 0.14, gun, 4.7, 0.88, 4.9, null, false); box(0.3, 0.2, 0.1, gun, 4.25, 0.88, 5.2, null, false);
+    cyl(0.07, 0.07, 0.16, mats.hazard, 5.8, 0.88, 5.2, null, false, 8); box(0.4, 0.06, 0.3, mats.red, 5.6, 0.88, 4.75, null, false);
+    St(5, 3.9, PZ);
+    [3.0, 4.2, 5.4].forEach((lz, i) => {                                                             // 탄약 상자
+      box(1.0, 0.6, 1.0, olive, 8.9, 0, lz); box(1.03, 0.08, 1.03, mats.dark, 8.9, 0.56, lz, null, false);
+      box(0.02, 0.25, 0.4, mats.hazard, 8.39, 0.2, lz, null, false);
+      if (i < 2) box(0.9, 0.5, 0.9, olive, 8.9, 0.66, lz + 0.1);
+    });
+    St(7.7, 4.2, PX);
+    [3.9, 6.1].forEach(x => box(0.2, 1.7, 0.2, mats.steel, x, 0, 1.7));                              // 보안 게이트
+    decal(2.0, 0.08, pulse(glow(0xff4a3d, 1.4), 0.8, 2), 5, 1.7, 0.012);
+    box(0.5, 0.9, 0.3, mats.dark, 7.3, 0, 1.0); box(0.4, 0.3, 0.02, screenMat('text', 0xff9d4a), 7.3, 0.55, 1.16, null, false);
+  });
+
+  /* ----- 작전 회의실 (briefing room) ----- */
+  aRoom('briefing', 27, 12, true, 'B-18', 'BRIEFING ROOM', '작전 회의실', null, (r, St) => {
+    box(5.2, 0.1, 2.0, mats.dark, 6, 0.7, 5); box(4.6, 0.7, 0.5, mats.steel, 6, 0, 5);               // 회의 탁자
+    box(4.4, 0.02, 1.4, pulse(glow(0x58d6ff, 0.7), 0.2, 1.5), 6, 0.8, 5, null, false);
+    const holo = grp(6, 1.55, 5);                                                                    // 탁자 위 행성 홀로그램
+    holo.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), new THREE.MeshBasicMaterial({ color: 0x7fe6ff, wireframe: true, transparent: true, opacity: 0.7 })));
+    const orb = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.012, 6, 40), new THREE.MeshBasicMaterial({ color: 0xffc46b })); orb.rotation.x = Math.PI / 2; holo.add(orb);
+    ball(0.06, glow(0xff4a3d, 1.5), 0.9, 0, 0, holo, false);
+    spinners.push({ obj: holo, axis: 'y', speed: 0.6 });
+    const chair = M(0x3f4f7a);
+    [3.9, 6, 8.1].forEach(x => [[3.3, 1], [6.7, -1]].forEach(c => { box(0.6, 0.45, 0.6, chair, x, 0, c[0]); box(0.6, 0.6, 0.1, chair, x, 0.45, c[0] - c[1] * 0.3); }));
+    St(3.9, 3.3, PZ, { pose: 'sit', h: 0.45 }); St(8.1, 3.3, PZ, { pose: 'sit', h: 0.45 });
+    St(3.9, 6.7, NZ, { pose: 'sit', h: 0.45, via: [[2.0, 2.2], [2.0, 7.6]] });
+    St(8.1, 6.7, NZ, { pose: 'sit', h: 0.45, via: [[10.0, 2.2], [10.0, 7.6]] });
+    box(6.4, 1.7, 0.1, mats.dark, 6, 0.4, 9.3); box(6.0, 1.4, 0.02, screenMat('planet'), 6, 0.55, 9.23, null, false);   // 벽면 전술 화면
+    St(10.3, 8.5, NZ, { via: [[10.3, 2.2]] });                                                       // 발표자
+    box(0.6, 0.9, 2.4, mats.wood, 0.6, 0, 5); cyl(0.07, 0.06, 0.13, mats.white, 0.6, 0.9, 4.4, null, false, 10); cyl(0.07, 0.06, 0.13, mats.white, 0.6, 0.9, 4.7, null, false, 10);
+    plant(0.8, 8.7, 0.9); plant(11.2, 1.0, 0.7);
+  });
+
+  /* ----- 전투정보실 (CIC) ----- */
+  aRoom('cic', 39, 12, true, 'T-19', 'COMBAT INFO CENTER', '전투정보실', 0xff5a4a, (r, St) => {
+    cyl(1.4, 1.55, 0.75, mats.dark, 6, 0, 5.2, null, true, 24); cyl(1.25, 1.25, 0.04, pulse(glow(0xff6a4a, 1.2), 0.4, 2), 6, 0.75, 5.2, null, false, 24);
+    const fr = new THREE.Mesh(new THREE.RingGeometry(1.95, 2.1, 40), mats.hazard); fr.rotation.x = -Math.PI / 2; fr.position.set(6, 0.012, 5.2); root.add(fr);
+    const tac = grp(6, 1.3, 5.2);                                                                    // 전술 상황판: 자함, 탐지 범위, 접촉 표적
+    box(1.1, 0.12, 0.28, new THREE.MeshBasicMaterial({ color: 0x7fe6ff, wireframe: true }), 0, -0.06, 0, tac, false);
+    [0.75, 1.15].forEach((rr, i) => { const t = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.01, 6, 40), new THREE.MeshBasicMaterial({ color: i ? 0xff6a4a : 0x58d6ff })); t.rotation.x = Math.PI / 2; tac.add(t); });
+    for (let i = 0; i < 6; i++) { const a = i * 1.07; ball(0.05, new THREE.MeshBasicMaterial({ color: i < 4 ? 0x7dffb0 : 0xff4a3d }), Math.cos(a) * (0.55 + i * 0.1), 0.08 * (i % 3), Math.sin(a) * (0.55 + i * 0.1), tac, false); }
+    spinners.push({ obj: tac, axis: 'y', speed: 0.35 });
+    St(6, 3.1, PZ);
+    consoleUnit(St(2.3, 4.2, NX), 2.2, 0xff6a4a, 0.95, 'radar');
+    consoleUnit(St(2.3, 7.0, NX), 2.2, 0x58d6ff, 0.95, 'wave');
+    consoleUnit(St(9.7, 4.2, PX), 2.2, 0xffc46b, 0.95, 'bars');
+    consoleUnit(St(9.7, 7.0, PX), 2.2, 0x58d6ff, 0.95, 'text');
+    consoleUnit(St(6, 8.0, PZ, { via: [[3.6, 3.0], [3.6, 8.0]] }), 3.0, 0xff6a4a, 0.95, 'radar');
+    [1.2, 10.8].forEach(x => box(0.06, 0.06, 7, pulse(glow(0xff4a3d, 1.2), 0.7, 1.5), x - 6 < 0 ? 0.2 : 11.8, 1.3, 5, null, false));   // 경계 태세 표시등
+  });
+
+  /* ----- 격납고 (hangar bay) ----- */
+  outerRoom('hangar', 17, false, 'V-20', 'HANGAR BAY', '격납고', null, (r, St) => {
+    const hl = new THREE.PointLight(0xbfd8ff, 0.8, 30, 2); hl.position.set(17, 4, 5); root.add(hl);
+    // 발진구: 역장과 바깥 발진 갑판
+    box(27, 2.4, 0.06, new THREE.MeshBasicMaterial({ color: 0x58d6ff, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 17, 0, 9.5, null, false);
+    box(27, 0.05, 0.2, pulse(glow(0x58d6ff, 1.6), 0.5, 2), 17, 0.02, 9.5, null, false); box(27.4, 0.2, 0.3, mats.steel, 17, 2.4, 9.5);
+    [3.5, 30.5].forEach(x => box(0.4, 2.8, 0.4, mats.steel, x, -0.2, 9.5));
+    box(30, 0.2, 3.7, M(0x3c404c), 17, -0.2, 11.5, null, false).receiveShadow = true;
+    const padMat = M(0x2f3340);
+    [5, 12.5, 21.5, 29].forEach((x, i) => {
+      decal(3.9, 5.4, mats.hazard, x, 5.4, 0.002); decal(3.7, 5.2, padMat, x, 5.4, 0.008);          // 주기 구역
+      decal(0.14, 3.4, mats.hazard, x - 1.9, 11.4, 0.004); decal(0.14, 3.4, mats.hazard, x + 1.9, 11.4, 0.004);
+      for (let k = 0; k < 3; k++) ball(0.07, pulse(glow(0x7dffb0, 1.4), 1.2, 3), x, 0.05, 10.2 + k * 1.2, null, false);
+      if (i < 3) makeFighter([0xe8873a, 0x3f7fd8, 0x4fae6a][i], root).position.set(x, 0.02, 5.2);    // 4번 자리는 발진·귀환하는 1번기
+    });
+    decal(32.6, 0.08, mats.hazard, 17, 2.5, 0.004);                                                  // 보행 통로 경계선
+    St(2.6, 5.4, PX, { via: [[2.6, 2.0]] }); St(10.0, 5.4, PX, { via: [[10.0, 2.0]] });
+    St(24.0, 5.4, NX, { via: [[24.0, 2.0]] }); St(26.2, 7.9, PZ, { via: [[26.2, 2.0]] }); St(32.4, 6.6, NX, { via: [[32.4, 2.0]] });
+    consoleUnit(St(17, 3.2, PZ), 2.6, 0x58d6ff, 0.95, 'radar');                                      // 발진 관제 콘솔
+    sparkAt(11.0, 0.62, 4.3, root);                                                                  // 2번기 날개 정비
+    box(0.8, 0.7, 0.6, mats.red, 14.6, 0, 3.5); box(0.5, 0.1, 0.12, mats.steel, 14.6, 0.7, 3.5, null, false);
+    box(0.9, 0.2, 1.6, mats.dark, 8.4, 0, 7.3); const ft = cyl(0.4, 0.4, 1.4, mats.hazard, 8.4, 0, 7.3, null, true, 14); ft.rotation.x = Math.PI / 2; ft.position.y = 0.6;   // 급유 카트
+    box(1.5, 0.06, 0.06, mats.dark, 7.3, 0.3, 6.7, null, false);
+    box(0.7, 0.9, 2.4, mats.steel, 33.2, 0, 4.2);                                                    // 미사일 거치대
+    [3.4, 4.2, 5.0].forEach(z => { cyl(0.09, 0.09, 0.8, mats.white, 33.2, 0.9, z, null, false, 8); cyl(0.01, 0.09, 0.22, mats.red, 33.2, 1.7, z, null, false, 8); });
+    [3.2, 7.4].forEach(lz => box(0.7, 1.7, 0.08, mats.steel, 0.6, 0, lz));                           // 부품 선반
+    [0.5, 1.1].forEach(y => { box(0.7, 0.06, 4.2, mats.steel, 0.6, y, 5.3); for (let k = 0; k < 5; k++) if (rnd() < 0.8) box(0.45, 0.25 + rnd() * 0.2, 0.5, pick(cratePal), 0.6, y + 0.06, 3.8 + k * 0.75, null, false); });
+    [[16.0, 8.4], [18.2, 8.6]].forEach(p => { cyl(0.3, 0.3, 0.8, M(0x3f6fb5), p[0], 0, p[1]); cyl(0.31, 0.31, 0.06, mats.hazard, p[0], 0.5, p[1], null, false); });
+  }, { line: 'A', zw: 1.5, w: 34 });
+
+  /* ----- 전산실 (data core) ----- */
+  aRoom('datacore', -28, 11, true, 'D-21', 'DATA CORE', '전산실', 0x6a8cff, (r, St) => {
+    [2.0, 4.0, 7.0, 9.0].forEach(x => {                                                              // 서버 랙
+      box(0.8, 1.9, 3.4, mats.dark, x, 0, 6.6); box(0.86, 0.06, 3.46, mats.steel, x, 1.9, 6.6, null, false);
+      [-1, 1].forEach(sd => [0.5, 1.0, 1.5].forEach((y, k) => box(0.02, 0.07, 3.0, pulse(glow([0x58d6ff, 0x7dffb0, 0xffc46b][k], 1.1), 0.9, 1.5 + rnd() * 6), x + sd * 0.41, y, 6.6, null, false)));
+    });
+    St(3.0, 6.6, NX, { via: [[3.0, 3.6]] }); St(8.0, 6.6, PX, { via: [[8.0, 3.6]] });
+    cyl(0.6, 0.72, 0.5, mats.dark, 5.5, 0, 7.4, null, true, 16); cyl(0.5, 0.5, 0.04, pulse(glow(0x6a8cff, 1.5), 0.5, 2), 5.5, 0.5, 7.4, null, false, 16);   // 함선 AI 코어
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshBasicMaterial({ color: 0x9fb8ff, wireframe: true }));
+    core.position.set(5.5, 1.4, 7.4); root.add(core); bobbers.push({ mesh: core, y: 1.4, amp: 0.1, speed: 1.3 });
+    ball(0.16, pulse(glow(0xffffff, 1.6), 0.6, 3), 5.5, 1.4, 7.4, null, false);
+    St(5.5, 5.4, PZ);
+    consoleUnit(St(1.7, 2.3, NX), 1.8, 0x6a8cff, 0.95, 'text');
+    const cp = cyl(0.12, 0.12, 9.6, M(0x4aa8d8), 5.5, 0, 9.2, null, false, 8); cp.rotation.z = Math.PI / 2; cp.position.y = 1.1;   // 냉각 배관
+    decal(0.3, 3.6, mats.dark, 5.5, 3.4); decal(0.12, 3.6, mats.hazard, 5.5, 3.4, 0.012);
+  });
+
+  /* ----- 공작실 (fabrication) ----- */
+  aRoom('fab', -40, 12, true, 'P-22', 'FABRICATION', '공작실', null, (r, St) => {
+    box(3.4, 0.3, 2.6, mats.dark, 3.0, 0, 6.8);                                                      // 대형 적층 제조기
+    [[1.4, 5.6], [4.6, 5.6], [1.4, 8.0], [4.6, 8.0]].forEach(p => box(0.14, 2.0, 0.14, mats.steel, p[0], 0.3, p[1]));
+    box(3.4, 0.12, 0.14, mats.steel, 3.0, 2.2, 5.6); box(3.4, 0.12, 0.14, mats.steel, 3.0, 2.2, 8.0);
+    const gantry = grp(3.0, 2.2, 6.8); box(0.16, 0.12, 2.5, mats.hazard, 0, 0, 0, gantry);
+    const headG = grp(0, 0, 0, gantry); box(0.3, 0.35, 0.3, mats.dark, 0, -0.35, 0, headG); ball(0.06, glow(0xffa24a, 2), 0, -0.4, 0, headG, false);
+    const part = box(1.3, 0.6, 1.3, M(0x9fb4c8), 3.0, 0.3, 6.8);
+    anims.push(t => { gantry.position.x = 3.0 + Math.sin(t * 0.9) * 1.2; headG.position.z = Math.sin(t * 2.3) * 0.9; const k = 0.3 + ((t * 0.04) % 1) * 1.2; part.scale.y = k; part.position.y = 0.3 + 0.3 * k; });
+    St(3.0, 4.6, PZ);
+    box(2.4, 1.4, 1.4, mats.white, 8.8, 0, 8.3); box(1.4, 0.7, 0.04, glow(0x9fdcff, 0.5), 8.5, 0.5, 7.58, null, false);   // 절삭 가공기
+    box(0.5, 0.4, 0.04, screenMat('bars', 0xffc46b), 9.6, 0.7, 7.58, null, false); sparkAt(8.5, 0.8, 7.75, root);
+    St(8.8, 6.7, PZ);
+    box(0.9, 0.6, 4.2, mats.steel, 11.0, 0, 4.0); box(0.7, 0.03, 4.0, mats.dark, 11.0, 0.6, 4.0, null, false);            // 컨베이어
+    const parts = [0, 1, 2].map(i => box(0.4, 0.25, 0.4, cratePal[i], 11.0, 0.63, 4, null, false));
+    anims.push(t => parts.forEach((p, i) => { p.position.z = 2.2 + ((t * 0.3 + i * 1.2) % 3.6); }));
+    St(10.0, 4.0, PX);
+    [1.0, 1.95].forEach((x, i) => { const sp = cyl(0.42, 0.42, 0.3, M(i ? 0xe8873a : 0x4fb8c8), x, 0, 2.4); sp.rotation.x = Math.PI / 2; sp.position.y = 0.42; });   // 소재 스풀
+    box(0.5, 0.3, 1.6, mats.steel, 0.55, 0, 4.2); for (let k = 0; k < 6; k++) cyl(0.04, 0.04, 1.3 + (k % 3) * 0.15, mats.steel, 0.55, 0.3, 3.6 + k * 0.24, null, false, 6);
+    const base = grp(6.3, 0, 8.4); cyl(0.2, 0.26, 0.9, mats.hazard, 0, 0, 0, base);                  // 조립 로봇 팔
+    const j1 = grp(0, 0.9, 0, base); box(0.14, 0.9, 0.14, mats.hazard, 0, 0, 0, j1); ball(0.12, mats.dark, 0, 0, 0, j1, false);
+    const j2 = grp(0, 0.9, 0, j1); box(0.11, 0.75, 0.11, mats.steel, 0, 0, 0, j2); ball(0.1, mats.dark, 0, 0, 0, j2, false);
+    armsAnim.push({ j1, j2 });
+  });
+
+  /* ----- 연료 저장고 (fuel depot) ----- */
+  aRoom('fuel', -51, 11, true, 'U-23', 'FUEL DEPOT', '연료 저장고', null, (r, St) => {
+    [3.0, 8.0].forEach((x, i) => {                                                                   // 추진제 탱크
+      const tm = M(i ? 0xe8e4d8 : 0xe8873a);
+      const tk = cyl(1.3, 1.3, 4.6, tm, x, 0, 6.5, null, true, 20); tk.rotation.x = Math.PI / 2; tk.position.y = 1.65;
+      [5.0, 8.0].forEach(z => { const b = cyl(1.34, 1.34, 0.25, mats.hazard, x, 0, z, null, false, 20); b.rotation.x = Math.PI / 2; b.position.y = 1.65; box(2.3, 0.45, 0.4, mats.dark, x, 0, z); });
+      box(0.6, 0.45, 0.04, mats.white, x, 1.4, 4.17, null, false); box(0.2, 0.2, 0.05, mats.red, x + 0.1, 1.5, 4.16, null, false);
+      cyl(0.08, 0.08, 1.0, mats.steel, x + (i ? -1.0 : 1.0), 0, 4.6, null, false, 8);
+      St(x, 3.1, PZ);
+    });
+    box(1.1, 0.8, 1.3, mats.steel, 5.5, 0, 7.6); box(1.16, 0.08, 1.36, mats.dark, 5.5, 0, 7.6, null, false);   // 이송 펌프
+    const vw = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 6, 16), mats.red); vw.position.set(5.5, 1.0, 6.9); add(vw, null, false);
+    const gg = cyl(0.17, 0.17, 0.05, mats.white, 5.2, 0, 6.93, null, false, 14); gg.rotation.x = Math.PI / 2; gg.position.y = 0.55;
+    box(0.02, 0.12, 0.02, mats.red, 5.2, 0.52, 6.9, null, false);
+    St(5.5, 5.9, PZ);
+    const fp = cyl(0.15, 0.15, 10.2, M(0xd8795f), 5.5, 0, 9.2, null, false, 8); fp.rotation.z = Math.PI / 2; fp.position.y = 0.5;
+    decal(10, 0.12, mats.hazard, 5.5, 3.8); extinguisher(10.4, 0.6); extinguisher(10.4, 1.1);
+    box(0.04, 0.5, 0.5, mats.hazard, 0.18, 0.8, 2.0, null, false);
+  });
+
+  /* ----- 보안실 (security) ----- */
+  aRoom('security', -28, 11, false, 'K-24', 'SECURITY', '보안실', null, (r, St) => {
+    box(5.2, 1.6, 0.12, mats.dark, 3.2, 0.5, 9.26);                                                  // 감시 화면 벽
+    [[1.4, 'radar', 0x7dffb0], [3.2, 'text', 0x58d6ff], [5.0, 'wave', 0xffc46b]].forEach(sc => box(1.5, 0.9, 0.02, screenMat(sc[1], sc[2]), sc[0], 0.95, 9.17, null, false));
+    box(5.2, 0.75, 0.8, mats.steel, 3.2, 0, 8.3); box(5.3, 0.05, 0.9, mats.dark, 3.2, 0.75, 8.3, null, false);
+    const chair = M(0x3f4f7a);
+    [1.8, 4.6].forEach(x => { box(0.6, 0.45, 0.6, chair, x, 0, 7.2); box(0.6, 0.6, 0.1, chair, x, 0.45, 6.9); St(x, 7.2, PZ, { pose: 'sit', h: 0.45 }); });
+    box(0.15, 1.5, 3.3, mats.steel, 7.6, 0, 7.7);                                                    // 구금실
+    for (let i = 0; i < 7; i++) box(0.05, 1.5, 0.05, pulse(glow(0xff6a4a, 1.3), 0.3, 3), 7.95 + i * 0.45, 0, 6.05, null, false);
+    box(3.3, 0.08, 0.15, mats.steel, 9.25, 1.5, 6.05); box(2.4, 0.4, 0.6, mats.steel, 9.4, 0, 9.0);
+    St(9.2, 5.0, PZ);
+    box(0.6, 1.9, 1.6, M(0x5a6072), 0.6, 0, 3.4); box(0.03, 0.12, 1.6, mats.red, 0.92, 1.6, 3.4, null, false);   // 장비 보관함
+    St(1.7, 3.4, NX);
+    [2.4, 3.2, 4.0].forEach(lz => box(0.08, 1.0, 0.6, M(0x4a5066), 10.55, 0, lz));                   // 방패 거치
+    box(0.5, 0.9, 0.3, mats.dark, 7.4, 0, 1.0); box(0.4, 0.3, 0.02, screenMat('text', 0x7dffb0), 7.4, 0.55, 1.16, null, false);
+  });
+
+  /* ----- 어뢰실 (torpedo room) ----- */
+  aRoom('torpedo', -40, 12, false, 'Y-25', 'TORPEDO ROOM', '어뢰실', 0xff8a5a, (r, St) => {
+    const tb = M(0xd9dde4);
+    const torp = (x, y, z) => {
+      const g = grp(x, y, z);
+      const b = cyl(0.22, 0.22, 2.2, tb, 0, 0, 0, g, true, 12); b.rotation.x = Math.PI / 2; b.position.set(0, 0, 0);
+      ball(0.22, mats.red, 0, 0, 1.1, g); box(0.6, 0.04, 0.3, mats.dark, 0, -0.02, -0.95, g, false); box(0.04, 0.6, 0.3, mats.dark, 0, -0.3, -0.95, g, false);
+      return g;
+    };
+    [1.3, 10.7].forEach(x => {                                                                       // 어뢰 거치대
+      box(1.7, 0.15, 3.0, mats.dark, x, 0, 4.9);
+      [[-0.4, 0.42], [0.4, 0.42], [-0.4, 0.92], [0.4, 0.92]].forEach(p => torp(x + p[0], p[1], 4.9));
+      [3.55, 6.35].forEach(z => box(1.7, 1.25, 0.1, mats.steel, x, 0.15, z));
+    });
+    [4.5, 7.5].forEach((x, i) => {                                                                   // 장전 레일과 발사관
+      box(0.5, 0.45, 4.4, mats.steel, x, 0, 6.6); box(0.62, 0.06, 4.4, mats.hazard, x, 0.02, 6.6, null, false);
+      const tu = cyl(0.42, 0.42, 0.8, mats.dark, x, 0, 9.0, null, true, 14); tu.rotation.x = Math.PI / 2; tu.position.y = 0.72;
+      const rg = cyl(0.5, 0.5, 0.12, mats.hazard, x, 0, 8.62, null, false, 14); rg.rotation.x = Math.PI / 2; rg.position.y = 0.72;
+      ball(0.09, pulse(glow(i ? 0x7dffb0 : 0xff4a3d, 1.5), 1.2, 3), x, 1.45, 9.1, null, false);
+    });
+    const tp = torp(4.5, 0.72, 5.6); torp(7.5, 0.72, 5.8);
+    anims.push(t => { const u = (t * 0.07) % 1; tp.position.z = 5.6 + Math.min(1, u * 1.8) * 3.2; tp.visible = u < 0.8; });
+    consoleUnit(St(6, 3.4, PZ), 2.4, 0xff8a5a, 0.95, 'bars');
+    St(3.0, 5.0, NX); St(9.0, 5.0, PX); St(3.2, 8.0, PZ, { via: [[3.2, 3.0]] });
+    decal(11, 0.12, mats.hazard, 6, 2.4);
+  });
+
+  /* ----- 생명유지실 (life support) ----- */
+  aRoom('lifesup', -51, 11, false, 'O-26', 'LIFE SUPPORT', '생명유지실', 0x8fe8c8, (r, St) => {
+    [2.0, 4.4].forEach((x, i) => {                                                                   // 공기 정화탑
+      cyl(0.8, 0.9, 2.0, mats.white, x, 0, 8.0, null, true, 16); cyl(0.86, 0.86, 0.12, mats.steel, x, 2.0, 8.0, null, false, 16);
+      const fan = grp(x, 2.16, 8.0); box(1.4, 0.04, 0.2, mats.dark, 0, 0, 0, fan, false); box(0.2, 0.04, 1.4, mats.dark, 0, 0.001, 0, fan, false);
+      spinners.push({ obj: fan, axis: 'y', speed: 7 + i * 2 });
+      box(0.5, 0.9, 0.04, pulse(glow(0x7dffb0, 1), 0.4, 2), x, 0.5, 7.06, null, false);
+    });
+    const algae = new THREE.MeshLambertMaterial({ color: 0x4dff9a, emissive: 0x1a8a4a, emissiveIntensity: 0.9, transparent: true, opacity: 0.55, depthWrite: false });
+    const bub = new THREE.MeshBasicMaterial({ color: 0xe8fff0 });
+    [7.2, 8.4, 9.6].forEach(x => {                                                                   // 조류 생물반응기
+      cyl(0.42, 0.46, 0.2, mats.dark, x, 0, 8.2); cyl(0.34, 0.34, 1.9, algae, x, 0.2, 8.2, null, false, 14); cyl(0.4, 0.4, 2.0, mats.glass, x, 0.2, 8.2, null, false, 14);
+      cyl(0.43, 0.43, 0.12, mats.steel, x, 2.2, 8.2, null, false, 14);
+      for (let b = 0; b < 3; b++) bubbles.push({ mesh: ball(0.05, bub, x, 0.5, 8.2, null, false), cx: x, cz: 8.2, top: 2.0, off: rnd(), ang: rnd() * 6.28, rad: 0.05 + rnd() * 0.2, speed: 0.3 + rnd() * 0.3 });
+    });
+    [2.4, 3.2, 4.0].forEach(lz => { cyl(0.3, 0.3, 1.5, mats.white, 0.7, 0, lz); ball(0.3, mats.white, 0.7, 1.5, lz); cyl(0.31, 0.31, 0.12, M(0x4aa8d8), 0.7, 0.9, lz, null, false); });   // 산소 탱크
+    consoleUnit(St(8.6, 3.2, PX), 2.0, 0x7dffb0, 0.95, 'wave');
+    St(3.2, 6.4, PZ); St(8.4, 6.9, PZ); St(1.8, 3.2, NX);
+    const du = cyl(0.2, 0.2, 10.2, mats.steel, 5.5, 0, 9.2, null, false, 10); du.rotation.z = Math.PI / 2; du.position.y = 1.2;
+  });
+
+  linkNav();
+  root = ship; off = 0; rot = 0;
+
+  /* ---------- crew ---------- */
+  const CREW_DEFS = [
+    { suit: 0xe8873a, hair: 0x2b2018, skin: 0xe8b48c }, { suit: 0x3f7fd8, hair: 0x6b3a1e, skin: 0xc68a5e },
+    { suit: 0x4fae6a, hair: 0x111111, skin: 0xf0c8a0 }, { suit: 0xe8e4d8, hair: 0x8a5a2a, skin: 0x8a5a3c },
+    { suit: 0xd8c84f, hair: 0x1a1a1a, skin: 0xe8b48c }, { suit: 0xc8553d, hair: 0xd8d0c0, skin: 0xf0c8a0 },
+    { suit: 0x8a6fd8, hair: 0x3a2414, skin: 0xc68a5e }, { suit: 0x4fb8c8, hair: 0x111111, skin: 0x8a5a3c },
+    { suit: 0xe8873a, hair: 0xb5653f, skin: 0xf0c8a0 }, { suit: 0x3f7fd8, hair: 0x2b2018, skin: 0xe8b48c },
+    { suit: 0x4fae6a, hair: 0x6b3a1e, skin: 0xc68a5e }, { suit: 0xe8e4d8, hair: 0x111111, skin: 0xe8b48c },
+    { suit: 0xc8553d, hair: 0x2b2018, skin: 0x8a5a3c }, { suit: 0x8a6fd8, hair: 0xd8d0c0, skin: 0xf0c8a0 },
+    { suit: 0x4fb8c8, hair: 0x2b2018, skin: 0xe8b48c }, { suit: 0xd8c84f, hair: 0x6b3a1e, skin: 0xf0c8a0 }, { suit: 0x7a8a4a, hair: 0x111111, skin: 0xc68a5e },
+    { suit: 0x7a8a4a, hair: 0x8a5a2a, skin: 0xe8b48c }, { suit: 0x3f7fd8, hair: 0xd8d0c0, skin: 0x8a5a3c }, { suit: 0xe8873a, hair: 0x1a1a1a, skin: 0xf0c8a0 },
+    { robot: true, shell: 0x3fa7a0, eye: 0xffc46b }, { robot: true, shell: 0xe8873a, eye: 0x58d6ff }, { robot: true, shell: 0x8a6fd8, eye: 0x7dffb0 }, { robot: true, shell: 0xd8c84f, eye: 0x58d6ff },
+    { robot: true, shell: 0xc8553d, eye: 0x7dffb0 }, { robot: true, shell: 0x4f8fd8, eye: 0xffc46b }
+  ];
+  const allStations = Object.keys(ROOMS).reduce((a, k) => a.concat(ROOMS[k].stations), []);
+  const crew = [];
+  const SPEED = 1.9;
+  const crateMat = M(0xc9953f), eyeMat = M(0x1a1a22);
+  const zCanvas = mkCanvas(64, 64);
+  (function () { const c = zCanvas.getContext('2d'); c.fillStyle = '#fff'; c.font = '700 54px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Z', 32, 34); })();
+  const zTex = new THREE.CanvasTexture(zCanvas);
+
+  function makeCrew(def, i) {
+    const g = new THREE.Group(), fig = new THREE.Group(); g.add(fig); ship.add(g);
+    const robot = !!def.robot;
+    const suit = robot ? M(def.shell) : M(def.suit), skin = robot ? mats.dark : M(def.skin), boot = mats.dark;
+    const accent = robot ? glow(def.eye, 1.3) : null;
+    const legs = [-1, 1].map(s => {
+      const p = grp(s * 0.11, 0.72, 0, fig);
+      box(0.17, 0.62, 0.2, suit, 0, -0.62, 0, p); box(0.18, 0.12, 0.27, boot, 0, -0.72, 0.03, p);
+      if (robot) { ball(0.105, mats.dark, 0, -0.34, 0, p, false); box(0.19, 0.2, 0.22, robotSkin, 0, -0.3, 0.005, p, false); }
+      else box(0.18, 0.08, 0.21, mats.white, 0, -0.42, 0, p, false);
+      return p;
+    });
+    const torso = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.3, 4, 10), suit), fig);
+    torso.position.set(0, 1.02, 0); torso.scale.set(1.18, 1, 0.95);
+    box(0.48, 0.07, 0.4, boot, 0, 0.74, 0, fig, false);                                  // 벨트
+    const arms = [-1, 1].map(s => {
+      const p = grp(s * 0.31, 1.3, 0, fig);
+      box(0.12, 0.48, 0.13, suit, 0, -0.48, 0, p); if (robot) { ball(0.08, mats.dark, 0, -0.25, 0, p, false); box(0.135, 0.16, 0.145, robotSkin, 0, -0.46, 0, p, false); }
+      else box(0.13, 0.07, 0.14, mats.white, 0, -0.12, 0, p, false);
+      ball(0.075, skin, 0, -0.53, 0, p); return p;
+    });
+    if (robot) {
+      // 휴머노이드 로봇: 기체마다 색이 다른 외장, 띠 모양 발광 바이저, 관절 구, 등 전원 팩
+      cyl(0.07, 0.09, 0.12, mats.dark, 0, 1.33, 0, fig, false, 10);
+      const head = ball(0.19, suit, 0, 1.57, 0, fig); head.scale.set(1, 1.1, 1.05);
+      const visor = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.04, 6, 18, Math.PI), accent);
+      visor.rotation.x = Math.PI / 2; visor.position.set(0, 1.59, 0.03); fig.add(visor);
+      [-1, 1].forEach(sd => { const e = cyl(0.06, 0.06, 0.05, mats.dark, sd * 0.19, 0, 0, fig, false, 10); e.rotation.z = Math.PI / 2; e.position.y = 1.58; });
+      box(0.03, 0.14, 0.16, robotSkin, 0, 1.72, -0.06, fig, false);
+      box(0.34, 0.26, 0.06, robotSkin, 0, 0.98, 0.17, fig, false);
+      box(0.12, 0.05, 0.04, pulse(glow(def.eye, 1.2), 0.8, 2 + i), 0, 1.15, 0.2, fig, false);
+      box(0.32, 0.4, 0.13, mats.dark, 0, 0.86, -0.29, fig); box(0.05, 0.3, 0.03, accent, 0, 0.9, -0.365, fig, false);
+      [-1, 1].forEach(sd => { ball(0.1, robotSkin, sd * 0.31, 1.31, 0, fig, false); });
+    } else {
+      const hairM = M(def.hair);
+      box(0.1, 0.09, 0.05, mats.hazard, 0, 0.73, 0.2, fig, false);
+      box(0.3, 0.09, 0.05, mats.white, 0, 1.12, 0.17, fig, false);                       // 가슴 띠
+      box(0.08, 0.08, 0.04, glow(0x7dffb0, 1), 0.1, 1.0, 0.185, fig, false);             // 신분 배지
+      box(0.3, 0.38, 0.14, mats.steel, 0, 0.88, -0.3, fig); box(0.2, 0.06, 0.15, glow(0x58d6ff, 0.8), 0, 1.14, -0.3, fig, false);
+      ball(0.2, skin, 0, 1.56, 0, fig);
+      [-0.075, 0.075].forEach(dx => ball(0.028, eyeMat, dx, 1.58, 0.182, fig, false));
+      const hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.215, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hairM), fig);
+      hair.position.set(0, 1.57, -0.01); hair.rotation.x = -0.4;
+      if (i % 3 === 0) { box(0.44, 0.04, 0.04, mats.dark, 0, 1.6, 0, fig, false); box(0.05, 0.1, 0.1, mats.dark, 0.21, 1.52, 0, fig, false); }   // 헤드셋
+      if (i % 4 === 1) ball(0.09, hairM, 0, 1.64, -0.2, fig, false);                     // 묶은 머리
+    }
+    const cargo = box(0.36, 0.3, 0.3, crateMat, 0, 0.92, 0.36, fig); cargo.visible = false;
+    const zz = new THREE.Sprite(new THREE.SpriteMaterial({ map: zTex, color: 0xcfe4ff, transparent: true, opacity: 0, depthWrite: false }));
+    zz.scale.setScalar(0.4); ship.add(zz);
+    const sc = robot ? 1.0 : 0.92 + rnd() * 0.12; g.scale.setScalar(sc);
+    return { g, fig, legs, arms, cargo, zz, robot, x: 0, z: 0, yaw: 0, targetYaw: 0, state: 'work', timer: 0, station: null,
+             path: [], seg: 0, phase: rnd() * 6.28, speed: SPEED * (robot ? 0.8 : 0.9 + rnd() * 0.25), carry: false, figY: 0, figRx: 0 };
+  }
+
+  function buildPath(from, to) {
+    const pts = [];
+    from.via.slice().reverse().forEach(p => pts.push(p));
+    const A = from.room, B = to.room;
+    if (A !== B) {
+      pts.push(A.inn);
+      const ids = navPath(A.node, B.node);
+      if (ids.length < 2 || ids[0] === ids[ids.length - 1]) pts.push([NAV.nodes[A.node].x, NAV.nodes[A.node].z]);
+      else for (let i = 0; i < ids.length - 1; i++) {
+        const p = NAV.nodes[ids[i]], q = NAV.nodes[ids[i + 1]], d = Math.hypot(q.x - p.x, q.z - p.z) || 1;
+        const rx = -(q.z - p.z) / d * 0.45, rz = (q.x - p.x) / d * 0.45;                 // 복도에서는 우측 통행
+        pts.push([p.x + rx, p.z + rz], [q.x + rx, q.z + rz]);
+      }
+      pts.push(B.inn);
+    } else if (from.via.length || to.via.length) pts.push(A.inn);
+    to.via.forEach(p => pts.push(p));
+    pts.push([to.x, to.z]);
+    return pts;
+  }
+  function workTime(st) { return st.pose === 'lie' ? 14 + rnd() * 12 : st.pose === 'sit' ? 8 + rnd() * 9 : 5 + rnd() * 8; }
+  function chooseNext(c) {
+    // 휴머노이드 로봇은 서서 일하는 자리만 쓰고, 충전 포드는 로봇 전용이다
+    const free = allStations.filter(s => !s.user && (c.robot ? s.pose === 'stand' : !s.robot));
+    if (!free.length) { c.timer = 3; return; }
+    let pool = free.filter(s => s.room !== c.station.room);
+    if (!pool.length || rnd() > 0.85) pool = free;
+    if (c.robot && rnd() < 0.5) { const duty = pool.filter(s => s.robot || s.room.cargo); if (duty.length) pool = duty; }
+    const next = pick(pool), prev = c.station;
+    prev.user = null; next.user = c; c.station = next;
+    c.path = buildPath(prev, next); c.seg = 0; c.state = 'walk';
+    c.carry = !!prev.room.cargo && next.room !== prev.room && rnd() < (c.robot ? 0.95 : 0.75);
+    c.cargo.visible = c.carry;
+  }
+
+  CREW_DEFS.forEach((def, i) => {
+    const c = makeCrew(def, i);
+    const st = pick(allStations.filter(s => !s.user && (c.robot ? s.pose === 'stand' : !s.robot)));
+    st.user = c; c.station = st; c.x = st.x; c.z = st.z; c.yaw = c.targetYaw = st.face; c.timer = 1 + rnd() * 9;
+    crew.push(c);
+  });
+
+  function updateCrew(c, dt, t) {
+    const k = 1 - Math.exp(-dt * 9);
+    let figY = 0, figRx = 0, legL = 0, legR = 0, armL = 0, armR = 0, zOp = 0;
+    if (c.state === 'walk') {
+      let rem = c.speed * dt;
+      while (rem > 0 && c.seg < c.path.length) {
+        const p = c.path[c.seg], dx = p[0] - c.x, dz = p[1] - c.z, d = Math.hypot(dx, dz);
+        if (d > 1e-4) c.targetYaw = Math.atan2(dx, dz);
+        if (d <= rem) { c.x = p[0]; c.z = p[1]; rem -= d; c.seg++; }
+        else { c.x += dx / d * rem; c.z += dz / d * rem; rem = 0; }
+      }
+      c.phase += dt * 9;
+      const s = Math.sin(c.phase);
+      legL = s * 0.7; legR = -s * 0.7; figY = Math.abs(Math.cos(c.phase)) * 0.04;
+      if (c.carry) { armL = armR = -1.2; } else { armL = -s * 0.55; armR = s * 0.55; }
+      if (c.seg >= c.path.length) {
+        c.state = 'work'; c.timer = workTime(c.station); c.targetYaw = c.station.face;
+        c.carry = false; c.cargo.visible = false;
+      }
+    } else {
+      const st = c.station;
+      c.timer -= dt;
+      if (st.pose === 'sit') {
+        figY = st.h + 0.08 - 0.72; legL = legR = -Math.PI / 2;
+        armL = -0.55 + Math.sin(t * 1.3 + c.phase) * 0.12; armR = -0.55 + Math.cos(t * 1.1 + c.phase) * 0.12;
+      } else if (st.pose === 'lie') {
+        figY = st.h + 0.2 + Math.sin(t * 1.2 + c.phase) * 0.012; figRx = -Math.PI / 2;
+        // 잠든 승무원 머리 위로 Z가 떠오른다
+        if (st.press) { armL = armR = -Math.PI / 2 + Math.sin(t * 2.2 + c.phase) * 0.28; }
+        const u = (t * 0.45 + c.phase) % 1;
+        zOp = st.press ? 0 : Math.sin(u * Math.PI) * 0.9;
+        c.zz.position.set(st.x - Math.sin(st.face) * 1.5 + u * 0.3, 1.0 + u * 0.9, st.z - Math.cos(st.face) * 1.5);
+        c.zz.scale.setScalar(0.25 + u * 0.3);
+      } else if (st.pose === 'run') {
+        c.phase += dt * 11; const s = Math.sin(c.phase);
+        legL = s * 0.8; legR = -s * 0.8; armL = -s * 0.7 - 0.3; armR = s * 0.7 - 0.3; figY = st.h + Math.abs(Math.cos(c.phase)) * 0.05;
+      } else {
+        armL = -1.0 + Math.sin(t * 6 + c.phase) * 0.22; armR = -1.0 + Math.cos(t * 5 + c.phase) * 0.22;
+        figY = Math.sin(t * 1.5 + c.phase) * 0.01;
+      }
+      if (c.timer <= 0) chooseNext(c);
+    }
+    c.zz.material.opacity = zOp;
+    const dy = Math.atan2(Math.sin(c.targetYaw - c.yaw), Math.cos(c.targetYaw - c.yaw));
+    c.yaw += dy * Math.min(1, dt * 10);
+    c.figY += (figY - c.figY) * k; c.figRx += (figRx - c.figRx) * k;
+    c.g.position.set(c.x, 0, c.z); c.g.rotation.y = c.yaw;
+    c.fig.position.y = c.figY; c.fig.rotation.x = c.figRx;
+    c.legs[0].rotation.x += (legL - c.legs[0].rotation.x) * Math.min(1, k * 2);
+    c.legs[1].rotation.x += (legR - c.legs[1].rotation.x) * Math.min(1, k * 2);
+    c.arms[0].rotation.x += (armL - c.arms[0].rotation.x) * Math.min(1, k * 2);
+    c.arms[1].rotation.x += (armR - c.arms[1].rotation.x) * Math.min(1, k * 2);
+  }
+
+  /* ---------- 복도망을 돌아다니는 청소 로봇과 순찰 드론, 선외 화물 드론 ---------- */
+  const walkers = [], extDrones = [];
+  function addWalker(obj, speed, y, side) {
+    const n = Math.floor(rnd() * NAV.nodes.length);
+    walkers.push({ obj, x: NAV.nodes[n].x, z: NAV.nodes[n].z, prev: n, next: pick(NAV.adj[n]), speed, y, side, ox: 0, oz: 0, yaw: 0, tyaw: 0, phase: rnd() * 6.28 });
+  }
+  // 청소 로봇: 낮은 구동부 위에 육각 기둥 몸체, 센서 머리, 물탱크, 회전 솔을 얹은 직립형
+  function makeCleaner(color) {
+    const b = grp(0, 0, 0, ship), tint = M(color);
+    box(0.62, 0.2, 0.74, mats.dark, 0, 0.06, 0, b); box(0.66, 0.06, 0.78, mats.hazard, 0, 0.1, 0, b, false);
+    [-0.33, 0.33].forEach(x => [-0.22, 0.22].forEach(z => { const w = cyl(0.1, 0.1, 0.06, mats.dark, x, 0, z, b, false, 12); w.rotation.z = Math.PI / 2; w.position.y = 0.1; }));
+    cyl(0.2, 0.29, 0.62, tint, 0, 0.26, -0.04, b, true, 6);
+    box(0.2, 0.3, 0.03, screenMat('bars', 0x7dffb0), 0, 0.42, 0.2, b, false);
+    cyl(0.12, 0.12, 0.34, new THREE.MeshLambertMaterial({ color: 0x6fc8f0, transparent: true, opacity: 0.6 }), 0, 0.3, -0.36, b, false, 12);
+    cyl(0.13, 0.13, 0.04, mats.dark, 0, 0.64, -0.36, b, false, 12);
+    box(0.36, 0.16, 0.26, mats.white, 0, 0.9, 0, b); cyl(0.05, 0.05, 0.04, mats.dark, 0, 0.88, 0, b, false, 8);
+    [-0.09, 0.09].forEach(x => box(0.07, 0.05, 0.02, pulse(glow(0x58d6ff, 1.6), 0.8, 3), x, 0.96, 0.135, b, false));
+    const lidar = grp(0, 1.08, 0, b); cyl(0.08, 0.08, 0.05, mats.dark, 0, 0, 0, lidar, false, 10); box(0.03, 0.03, 0.08, glow(0xff4a3d, 1.5), 0, 0.01, 0.06, lidar, false);
+    spinners.push({ obj: lidar, axis: 'y', speed: 6 });
+    [-0.2, 0.2].forEach((x, k) => { const br = grp(x, 0.03, 0.42, b); cyl(0.14, 0.14, 0.03, tint, 0, 0, 0, br, false, 10); box(0.3, 0.02, 0.04, mats.white, 0, 0.031, 0, br, false); spinners.push({ obj: br, axis: 'y', speed: k ? 10 : -10 }); });
+    return b;
+  }
+  [0xe8873a, 0x4fb8c8, 0x8a6fd8, 0x4fae6a, 0xd8c84f, 0xc8553d].forEach(c => addWalker(makeCleaner(c), 0.9 + rnd() * 0.3, 0, 0.7));
+  [0x58d6ff, 0x7dffb0, 0xffc46b, 0x58d6ff, 0x7dffb0, 0xffc46b].forEach(c => addWalker(makeDrone(c, ship, true), 2.2 + rnd() * 0.8, 2.6, 0));
+  [0, 1, 2].forEach(i => {
+    const d = makeDrone([0xff4a3d, 0x7dffb0, 0xffc46b][i], ship); d.scale.setScalar(2.2);
+    box(0.5, 0.3, 0.34, cratePal[i], 0, -0.5, 0, d);
+    extDrones.push({ obj: d, a: i * 2.1, speed: 0.04 + i * 0.008, rx: 104 - i * 8, rz: 40 - i * 3, y: 6 + i * 1.6 });
+  });
+
+  function updateExtras(dt, t) {
+    const k = Math.min(1, dt * 6);
+    for (let i = 0; i < walkers.length; i++) {
+      const w = walkers[i]; let rem = w.speed * dt, guard = 0;
+      while (rem > 0 && guard++ < 8) {
+        const p = NAV.nodes[w.next], dx = p.x - w.x, dz = p.z - w.z, d = Math.hypot(dx, dz);
+        if (d <= rem) {
+          w.x = p.x; w.z = p.z; rem -= d;
+          const opts = NAV.adj[w.next].filter(n => n !== w.prev);
+          const nn = opts.length ? opts[Math.floor(Math.random() * opts.length)] : w.prev;
+          w.prev = w.next; w.next = nn;
+        } else {
+          w.x += dx / d * rem; w.z += dz / d * rem; rem = 0;
+          w.tyaw = Math.atan2(dx, dz);
+          w.ox += (dz / d * w.side - w.ox) * k; w.oz += (-dx / d * w.side - w.oz) * k;      // 진행 방향의 왼쪽 벽 쪽으로 붙는다
+        }
+      }
+      w.yaw += Math.atan2(Math.sin(w.tyaw - w.yaw), Math.cos(w.tyaw - w.yaw)) * k;
+      w.obj.position.set(w.x + w.ox, w.y ? w.y + Math.sin(t * 2.2 + w.phase) * 0.07 : 0, w.z + w.oz);
+      w.obj.rotation.y = w.yaw;
+    }
+    for (let i = 0; i < extDrones.length; i++) {
+      const e = extDrones[i]; e.a += e.speed * dt;
+      e.obj.position.set(14 + Math.cos(e.a) * e.rx, e.y + Math.sin(t * 0.8 + i) * 0.4, Math.sin(e.a) * e.rz);
+      e.obj.rotation.y = Math.atan2(-Math.sin(e.a) * e.rx, Math.cos(e.a) * e.rz);
+    }
+    for (let i = 0; i < sparks.length; i++) {
+      const s = sparks[i], on = Math.sin(t * 1.3 + i * 2) > -0.2;
+      s.visible = on && Math.random() > 0.25; if (s.visible) s.scale.setScalar(0.5 + Math.random() * 1.4);
+    }
+    for (let i = 0; i < armsAnim.length; i++) { const a = armsAnim[i]; a.j1.rotation.z = -0.55 + Math.sin(t * 0.9) * 0.22; a.j2.rotation.z = -1.25 + Math.sin(t * 1.4 + 1) * 0.3; a.j1.rotation.x = Math.sin(t * 0.6) * 0.35; }
+    for (let i = 0; i < hoverers.length; i++) { const h = hoverers[i], a = t * h.speed; h.obj.position.set(h.cx + Math.cos(a) * h.r, h.y + Math.sin(t * 2) * 0.06, h.cz + Math.sin(a) * h.r); h.obj.rotation.y = -a; }
+    for (let i = 0; i < bobbers.length; i++) { const b = bobbers[i]; b.mesh.position.y = b.y + Math.sin(t * b.speed) * b.amp; b.mesh.rotation.y = t * 0.4; }
+    for (let i = 0; i < swayers.length; i++) { const s = swayers[i]; s.obj.rotation.z = Math.sin(t * s.speed) * s.amp; }
+    for (let i = 0; i < lifters.length; i++) { const l = lifters[i]; l.obj.position.y = l.lo + (Math.sin(t * l.speed) * 0.5 + 0.5) * (l.hi - l.lo); }
+  }
+
+  /* ---------- sliding doors ---------- */
+  function updateDoors(dt) {
+    for (let i = 0; i < doors.length; i++) {
+      const d = doors[i]; let near = false;
+      for (let j = 0; j < crew.length; j++) { const c = crew[j]; if (Math.abs(c.x - d.x) < 1.7 && Math.abs(c.z - d.z) < 1.7) { near = true; break; } }
+      d.open += ((near ? 1 : 0) - d.open) * Math.min(1, dt * 7);
+      const off = d.w / 4 + d.open * d.w / 2;
+      if (d.alongX) { d.a.position.x = d.x - off; d.b.position.x = d.x + off; }
+      else { d.a.position.z = d.z - off; d.b.position.z = d.z + off; }
+      d.light.emissive.setHex(d.open > 0.3 ? 0xffc46b : 0x7dffb0);
+    }
+  }
+
+  /* ---------- starfield (2D canvas behind the stage) ---------- */
+  const sky = document.getElementById('sky');
+  const skyCtx = sky.getContext('2d');
+  const stars = [];
+  let skyW = 1, skyH = 1;
+  for (let i = 0; i < 260; i++) stars.push({ x: rnd(), y: rnd(), r: 0.4 + rnd() * rnd() * 1.6, s: 0.004 + rnd() * 0.02, a: 0.35 + rnd() * 0.65, warm: rnd() < 0.18 });
+  function resizeSky(w, h) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    skyW = w; skyH = h; sky.width = Math.round(w * dpr); sky.height = Math.round(h * dpr);
+    skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  const v0 = new THREE.Vector3(), v1 = new THREE.Vector3();
+  function drawSky(dt) {
+    // 선체 후방(-x)이 화면에서 향하는 방향으로 별이 흘러간다
+    v0.set(0, 0, 0).project(camera); v1.set(-1, 0, 0).project(camera);
+    let dx = (v1.x - v0.x) * skyW, dy = -(v1.y - v0.y) * skyH;
+    const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+    skyCtx.clearRect(0, 0, skyW, skyH);
+    const scale = Math.max(skyW, skyH);
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      if (!reduceMotion) {
+        s.x += dx * s.s * dt * scale / skyW; s.y += dy * s.s * dt * scale / skyH;
+        if (s.x < 0) s.x += 1; else if (s.x > 1) s.x -= 1;
+        if (s.y < 0) s.y += 1; else if (s.y > 1) s.y -= 1;
+      }
+      skyCtx.globalAlpha = s.a;
+      skyCtx.fillStyle = s.warm ? '#ffd9a8' : '#dfe8ff';
+      skyCtx.beginPath(); skyCtx.arc(s.x * skyW, s.y * skyH, s.r, 0, 6.2832); skyCtx.fill();
+    }
+    skyCtx.globalAlpha = 1;
+  }
+
+  /* ---------- 함재기: 초계 편대 3기와, 발진·귀환을 반복하는 1번기 ---------- */
+  function addTrail(f) {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.4, 3.2, 12, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    m.rotation.x = -Math.PI / 2; m.position.set(0, 0.6, -3.9); f.add(m); return m;
+  }
+  const patrol = [0, -1, 1].map(side => {
+    const f = makeFighter(0xc8553d, ship); f.scale.setScalar(1.2); addTrail(f);
+    return { obj: f, side, lag: side ? 0.06 : 0 };
+  });
+  const launcher = makeFighter(0xd8c84f, ship), lTrail = addTrail(launcher);
+  const PADX = 46, PADZ = 6.7;                     // 격납고 4번 주기 구역
+  const lCurve = new THREE.CatmullRomCurve3([
+    [PADX, 0.02, PADZ], [PADX, 0.6, 17], [52, 5, 40], [86, 12, 62], [131, 16, 30], [126, 16, -40], [66, 14, -62], [-14, 12, -58],
+    [-95, 12, -40], [-112, 10, 10], [-80, 9, 55], [-10, 8, 66], [36, 5, 46], [PADX, 1.2, 22], [PADX, 0.02, PADZ]
+  ].map(p => new THREE.Vector3(p[0], p[1], p[2])));
+  const lp = new THREE.Vector3(), lt = new THREE.Vector3();
+  let wingState = '발진 대기';
+  function updateWing(t) {
+    const a = t * 0.1;
+    for (let i = 0; i < patrol.length; i++) {
+      const p = patrol[i], aa = a - p.lag, rx = 125 + p.side * 6, rz = 64 + p.side * 6;
+      p.obj.position.set(15 + Math.cos(aa) * rx, 20 + Math.sin(aa * 2) * 3 - Math.abs(p.side), Math.sin(aa) * rz);
+      p.obj.rotation.set(0, Math.atan2(-Math.sin(aa) * rx, Math.cos(aa) * rz), 0.4);
+    }
+    const ph = (t + 9) % 80;
+    if (ph < 14) {                                 // 착함 후 제자리에서 기수를 돌려 다음 발진을 준비한다
+      const k = Math.min(1, Math.max(0, (ph - 2) / 5));
+      launcher.position.set(PADX, 0.02, PADZ); launcher.rotation.set(0, Math.PI * (1 - k * k * (3 - 2 * k)), 0);
+      lTrail.visible = false; wingState = ph < 9 ? '정비 중' : '발진 대기';
+    } else {
+      const s = (ph - 14) / 66, u = s * s * (3 - 2 * s);
+      lCurve.getPointAt(u, lp); lCurve.getTangentAt(u, lt);
+      launcher.position.copy(lp);
+      launcher.rotation.set(-Math.asin(Math.max(-1, Math.min(1, lt.y))), Math.atan2(lt.x, lt.z), 0);
+      lTrail.visible = true; wingState = u < 0.06 ? '발진' : u < 0.9 ? '초계 비행' : '귀환';
+    }
+  }
+
+  /* ---------- 구획 정보 (HUD·미니맵·카메라 이동이 함께 쓴다) ---------- */
+  const META = {};
+  const SECTIONS = [
+    ['선수', [['bridge', 'A-01', '조종실', 51, 59, -6, 6], ['cic', 'T-19', '전투정보실', 39, 51, -11, -1.5], ['briefing', 'B-18', '작전 회의실', 27, 39, -11, -1.5],
+      ['armory', 'X-17', '무기고', 17, 27, -11, -1.5], ['hangar', 'V-20', '격납고', 17, 51, 1.5, 11]]],
+    ['중앙', [['hydro', 'H-03', '수경재배실', -14, -5, -9.5, -1.5], ['lounge', 'L-04', '휴게실', -5, 5, -9.5, -1.5], ['quarters', 'Q-05', '선실 A', 5, 14, -9.5, -1.5],
+      ['water', 'W-06', '정수실', -14, -5, 1.5, 9.5], ['storage', 'C-07', '창고 A', -5, 5, 1.5, 9.5], ['medbay', 'M-08', '의무실', 5, 14, 1.5, 9.5],
+      ['maint', 'N-09', '보전반', -17, -8.5, -20.5, -12.5], ['robotics', 'R-10', '로봇 수리실', -8.5, 0, -20.5, -12.5], ['lab', 'S-11', '연구실', 0, 8.5, -20.5, -12.5],
+      ['quartersB', 'Q-12', '선실 B', 8.5, 17, -20.5, -12.5], ['cargoB', 'C-13', '창고 B', -17, -8.5, 12.5, 20.5], ['mess', 'G-14', '식당', -8.5, 0, 12.5, 20.5],
+      ['gym', 'F-15', '체력단련실', 0, 8.5, 12.5, 20.5], ['quartersC', 'Q-16', '선실 C', 8.5, 17, 12.5, 20.5]]],
+    ['선미', [['datacore', 'D-21', '전산실', -28, -17, -11, -1.5], ['fab', 'P-22', '공작실', -40, -28, -11, -1.5], ['fuel', 'U-23', '연료 저장고', -51, -40, -11, -1.5],
+      ['security', 'K-24', '보안실', -28, -17, 1.5, 11], ['torpedo', 'Y-25', '어뢰실', -40, -28, 1.5, 11], ['lifesup', 'O-26', '생명유지실', -51, -40, 1.5, 11],
+      ['engine', 'E-02', '엔진실', -61, -51, -8, 8]]]
+  ];
+  SECTIONS.forEach(sec => sec[1].forEach(m => { META[m[0]] = { id: m[0], code: m[1], ko: m[2], r: m.slice(3) }; }));
+  const CORRS = SEG_A.map(s => [s[0], s[1], -1.5, 1.5]).concat([[-14, 14, -12.5, -9.5], [-14, 14, 9.5, 12.5], [-17, -14, -12.5, 12.5], [14, 17, -12.5, 12.5]]);
+  const REST = { lounge: 1, mess: 1, gym: 1, quarters: 1, quartersB: 1, quartersC: 1 };
+  function roomAt(x, z) { for (const id in META) { const r = META[id].r; if (x >= r[0] && x <= r[1] && z >= r[2] && z <= r[3]) return META[id]; } return null; }
+
+  /* ---------- 카메라 이동 ---------- */
+  const HOME = new THREE.Vector3(10, -2, 2), tmpV = new THREE.Vector3();
+  let focus = null;
+  const distFor = viewH => Math.min(controls.maxDistance, Math.max(controls.minDistance, viewH / 2 / Math.tan(FOV * Math.PI / 360)));
+  function focusOn(x, z, viewH, dir) { focus = { target: new THREE.Vector3(x, dir ? HOME.y : 0, z), dist: distFor(viewH), dir: dir || null }; }
+  function frameAll() { selectRoom(null); focusOn(HOME.x, HOME.z, Math.max(92, 195 / camera.aspect), ISO_DIR); }
+  controls.addEventListener('start', () => { focus = null; });
+  function updateFocus(rdt) {
+    if (!focus) return;
+    const k = 1 - Math.exp(-rdt * 4);
+    tmpV.copy(camera.position).sub(controls.target);
+    let len = tmpV.length(); tmpV.normalize();
+    if (focus.dir) tmpV.lerp(focus.dir, k).normalize();
+    len += (focus.dist - len) * k;
+    controls.target.lerp(focus.target, k);
+    camera.position.copy(controls.target).addScaledVector(tmpV, len);
+    if (controls.target.distanceTo(focus.target) < 0.05 && Math.abs(len - focus.dist) < 0.5 && (!focus.dir || tmpV.distanceTo(focus.dir) < 0.01)) focus = null;
+  }
+
+  // 선택한 구획의 벽 위를 두르는 표시 테두리
+  const selFrame = new THREE.Group(); selFrame.visible = false; ship.add(selFrame);
+  const selBars = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffb347 })); selFrame.add(m); return m; });
+  let selected = null;
+  function selectRoom(id, keep) {
+    const next = id && (keep || id !== selected) ? id : null;
+    if (selected && META[selected].btn) META[selected].btn.removeAttribute('aria-current');
+    selected = next; selFrame.visible = !!next;
+    if (next) {
+      const m = META[next], r = m.r, w = r[1] - r[0], d = r[3] - r[2], cx = (r[0] + r[1]) / 2, cz = (r[2] + r[3]) / 2, y = WALL_H + 0.18;
+      if (m.btn) m.btn.setAttribute('aria-current', 'true');
+      selBars[0].scale.set(w, 0.08, 0.14); selBars[0].position.set(cx, y, r[2]); selBars[1].scale.set(w, 0.08, 0.14); selBars[1].position.set(cx, y, r[3]);
+      selBars[2].scale.set(0.14, 0.08, d); selBars[2].position.set(r[0], y, cz); selBars[3].scale.set(0.14, 0.08, d); selBars[3].position.set(r[1], y, cz);
+      focusOn(cx, cz, Math.max(0.41 * (w + d) + 5, 0.71 * (w + d) / camera.aspect) * 1.45);
+    }
+    hudClock = 1;
+  }
+
+  /* ---------- HUD ---------- */
+  const $ = id => document.getElementById(id);
+  const SPEEDS = [0, 1, 2, 4, 8];
+  let speed = 1, lastSpeed = 1, simT = 0, hudClock = 1, mapClock = 1;
+  const speedBtns = SPEEDS.map(v => $('sp' + v));
+  function setSpeed(v) {
+    speed = v;
+    speedBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(SPEEDS[i] === v)));
+    $('spdTxt').textContent = v ? v + '×' : '일시정지';
+  }
+  function togglePause() { if (speed) { lastSpeed = speed; setSpeed(0); } else setSpeed(lastSpeed); }
+  function toggleOrbit() { controls.autoRotate = !controls.autoRotate; $('btnOrbit').setAttribute('aria-pressed', String(controls.autoRotate)); }
+  controls.autoRotateSpeed = 0.7;
+  speedBtns.forEach((b, i) => b.addEventListener('click', () => (SPEEDS[i] === 0 ? togglePause() : setSpeed(SPEEDS[i]))));
+  $('btnOrbit').addEventListener('click', toggleOrbit);
+  $('btnHome').addEventListener('click', frameAll);
+  const roomsEl = $('rooms'), listBtn = $('btnList');
+  function showList(on) { roomsEl.hidden = !on; listBtn.setAttribute('aria-expanded', String(on)); }
+  listBtn.addEventListener('click', () => showList(roomsEl.hidden));
+  if (window.matchMedia && window.matchMedia('(max-width: 760px)').matches) showList(false);
+
+  const listEl = $('roomList');
+  SECTIONS.forEach(sec => {
+    const h = document.createElement('h3'); h.textContent = sec[0]; listEl.appendChild(h);
+    sec[1].forEach(row => {
+      const m = META[row[0]], b = document.createElement('button');
+      b.type = 'button'; b.className = 'room';
+      [['rc', m.code], ['rn', m.ko], ['ro', '0']].forEach(c => { const sp = document.createElement('span'); sp.className = c[0]; sp.textContent = c[1]; b.appendChild(sp); if (c[0] === 'ro') m.cnt = sp; });
+      b.addEventListener('click', () => selectRoom(m.id));
+      listEl.appendChild(b); m.btn = b;
+    });
+  });
+
+  window.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Space') { if (e.target && e.target.tagName === 'BUTTON') return; e.preventDefault(); togglePause(); }
+    else if (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3' || e.code === 'Digit4') setSpeed(SPEEDS[+e.code.slice(5)]);
+    else if (e.code === 'KeyO') toggleOrbit();
+    else if (e.code === 'KeyR') frameAll();
+    else if (e.code === 'Escape') selectRoom(null);
+  });
+
+  // 3D 화면 더블클릭: 바닥 평면과의 교점으로 구획을 찾는다
+  const ray = new THREE.Raycaster(), deckPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hitV = new THREE.Vector3(), ndc = new THREE.Vector2();
+  renderer.domElement.addEventListener('dblclick', e => {
+    const b = renderer.domElement.getBoundingClientRect();
+    ndc.set((e.clientX - b.left) / b.width * 2 - 1, -(e.clientY - b.top) / b.height * 2 + 1);
+    ray.setFromCamera(ndc, camera); deckPlane.constant = -ship.position.y;
+    if (ray.ray.intersectPlane(deckPlane, hitV)) { const m = roomAt(hitV.x, hitV.z); if (m) selectRoom(m.id, true); }
+  });
+
+  // 미니맵
+  const mm = $('minimap'), mctx = mm.getContext('2d');
+  const MM = { x0: -63, x1: 61, z0: -22, z1: 22 };
+  mm.addEventListener('click', e => {
+    const b = mm.getBoundingClientRect();
+    const x = MM.x0 + (e.clientX - b.left) / b.width * (MM.x1 - MM.x0), z = MM.z0 + (e.clientY - b.top) / b.height * (MM.z1 - MM.z0);
+    const m = roomAt(x, z);
+    if (m) selectRoom(m.id, true); else { selectRoom(null); focusOn(x, z, 30); }
+  });
+  function drawMap() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), w = mm.clientWidth || 300, h = mm.clientHeight || 106;
+    if (mm.width !== Math.round(w * dpr)) { mm.width = Math.round(w * dpr); mm.height = Math.round(h * dpr); }
+    const sx = w / (MM.x1 - MM.x0), sz = h / (MM.z1 - MM.z0), X = x => (x - MM.x0) * sx, Z = z => (z - MM.z0) * sz;
+    const c = mctx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    c.fillStyle = 'rgba(154,162,191,.3)';
+    CORRS.forEach(r => c.fillRect(X(r[0]), Z(r[2]), (r[1] - r[0]) * sx, (r[3] - r[2]) * sz));
+    for (const id in META) {
+      const r = META[id].r;
+      c.fillStyle = id === selected ? 'rgba(255,179,71,.7)' : 'rgba(236,233,221,.14)';
+      c.fillRect(X(r[0]) + 0.5, Z(r[2]) + 0.5, (r[1] - r[0]) * sx - 1, (r[3] - r[2]) * sz - 1);
+    }
+    const dot = (x, z, rad, col) => { c.fillStyle = col; c.beginPath(); c.arc(X(x), Z(z), rad, 0, 6.2832); c.fill(); };
+    walkers.forEach(k => dot(k.x + k.ox, k.z + k.oz, 1.3, k.y ? '#ffb347' : '#7dffb0'));
+    crew.forEach(k => dot(k.x, k.z, 1.8, k.robot ? '#58d6ff' : '#ffffff'));
+    if (launcher.position.z < MM.z1 && wingState !== '초계 비행') dot(launcher.position.x, launcher.position.z, 2.2, '#ffd94a');
+    c.strokeStyle = '#ffb347'; c.lineWidth = 1;                                    // 화면 중심 표시
+    const tx = X(controls.target.x), tz = Z(controls.target.z);
+    c.beginPath(); c.moveTo(tx - 5, tz); c.lineTo(tx + 5, tz); c.moveTo(tx, tz - 5); c.lineTo(tx, tz + 5); c.stroke();
+  }
+
+  // 성능 측정: 느린 기기에서는 해상도, 그다음 그림자 순으로 낮춘다
+  let fAcc = 0, fN = 0, fps = 60, slow = 0, quality = 2;
+  function measure(raw) {
+    if (raw > 3) return;                           // 탭 전환 등으로 멈췄던 프레임은 제외
+    fAcc += raw; fN++;
+    if (fAcc < 1) return;
+    fps = fN / fAcc; fAcc = 0; fN = 0;
+    slow = fps < 26 && !document.hidden ? slow + 1 : 0;
+    if (slow >= 3 && quality > 0) {
+      quality--; slow = 0;
+      if (quality === 1) { renderer.setPixelRatio(1); resize(); } else { sun.castShadow = false; renderer.shadowMap.needsUpdate = true; }
+    }
+  }
+  const pad2 = n => (n < 10 ? '0' : '') + n;
+  function updateHud() {
+    let work = 0, walk = 0, rest = 0, bots = 0;
+    const occ = {};
+    crew.forEach(k => {
+      const rid = k.station.room.id;
+      if (k.robot) bots++; else if (k.state === 'walk') walk++; else if (REST[rid] || k.station.pose === 'lie') rest++; else work++;
+      if (k.state === 'work') { const o = occ[rid] || (occ[rid] = [0, 0]); o[k.robot ? 1 : 0]++; }
+    });
+    for (const id in META) META[id].cnt.textContent = occ[id] ? occ[id][0] + occ[id][1] : 0;
+    const s = Math.floor(simT);
+    $('clock').textContent = 'T+ ' + pad2(Math.floor(s / 3600)) + ':' + pad2(Math.floor(s / 60) % 60) + ':' + pad2(s % 60);
+    $('stCrew').textContent = '근무 ' + work + ' · 이동 ' + walk + ' · 휴식 ' + rest;
+    $('stBots').textContent = '휴머노이드 ' + bots + ' · 청소 ' + walkers.filter(k => !k.y).length + ' · 드론 ' + (walkers.filter(k => k.y).length + extDrones.length + 3);
+    $('stWing').textContent = '격납 3 · 초계 3 · 1번기 ' + wingState;
+    $('stFps').textContent = Math.round(fps) + ' fps · 품질 ' + ['낮음', '중간', '높음'][quality];
+    const sel = $('sel');
+    if (selected) {
+      const m = META[selected], o = occ[selected] || [0, 0];
+      sel.textContent = '';
+      const code = document.createElement('b'); code.textContent = m.code;
+      const nm = document.createElement('strong'); nm.textContent = m.ko;
+      sel.appendChild(code); sel.appendChild(nm); sel.appendChild(document.createTextNode(' — 승무원 ' + o[0] + ' · 로봇 ' + o[1]));
+    } else sel.textContent = '구획을 선택하면 그곳으로 이동합니다.';
+  }
+
+  /* ---------- animation loop ---------- */
+  let last = performance.now();
+  function simStep(dt, t) {
+
+    for (let i = 0; i < crew.length; i++) updateCrew(crew[i], dt, t);
+    updateDoors(dt);
+    updateScreens(dt, t);
+    for (let i = 0; i < pulsers.length; i++) { const p = pulsers[i]; p.mat.emissiveIntensity = p.base + Math.sin(t * p.speed + p.phase) * p.amp * 0.5; }
+    for (let i = 0; i < spinners.length; i++) spinners[i].obj.rotation[spinners[i].axis] += spinners[i].speed * dt;
+    for (let i = 0; i < lightPulse.length; i++) { const l = lightPulse[i]; l.light.intensity = l.base + Math.sin(t * l.speed) * l.amp; }
+    for (let i = 0; i < rings.length; i++) rings[i].mesh.position.y = rings[i].base + Math.sin(t * 1.6 + rings[i].phase) * 0.22;
+    for (let i = 0; i < flames.length; i++) { const f = flames[i], s = 0.85 + Math.sin(t * 17 + f.phase) * 0.08 + Math.sin(t * 5.3 + f.phase) * 0.07; f.mesh.scale.set(1, s, 1); f.mesh.position.x = f.base - f.len / 2 * s; }
+    for (let i = 0; i < bubbles.length; i++) {
+      const b = bubbles[i], u = (t * b.speed + b.off) % 1, a = b.ang + t * 0.8;
+      b.mesh.position.set(b.cx + Math.cos(a) * b.rad, 0.4 + u * (b.top - 0.5), b.cz + Math.sin(a) * b.rad);
+    }
+    for (let i = 0; i < puffs.length; i++) {
+      const p = puffs[i], u = (t * 0.28 + p.off) % 1;
+      p.mesh.position.set(p.x + p.dx * u, p.y + u * p.rise, p.z + p.dz * u);
+      p.mesh.scale.setScalar((0.5 + u * 1.6) * p.sc); p.mesh.material.opacity = 0.34 * (1 - u);
+    }
+    if (scanner) scanner.position.z = 8.1 + Math.sin(t * 0.9) * 0.8;
+    if (drone) { drone.position.set(-9.5 + Math.sin(t * 0.45) * 3.4, 2.7 + Math.sin(t * 2.2) * 0.06, -6.4 + Math.sin(t * 0.9) * 2.0); drone.rotation.y = Math.sin(t * 0.45) * 0.6; }
+    if (forkLift) forkLift.userData.fork.position.y = 0.2 + (Math.sin(t * 0.5) * 0.5 + 0.5) * 0.9;
+    if (cat) { cat.userData.tail.rotation.y = Math.sin(t * 1.7) * 0.7; cat.userData.body.scale.y = 0.75 + Math.sin(t * 1.4) * 0.03; }
+
+    updateExtras(dt, t);
+
+    if (!reduceMotion) { ship.position.y = Math.sin(t * 0.5) * 0.18; ship.rotation.z = Math.sin(t * 0.33) * 0.006; }
+    for (let i = 0; i < anims.length; i++) anims[i](t);
+    for (let i = 0; i < turrets.length; i++) { const u = turrets[i]; u.head.rotation.y = u.yaw0 + Math.sin(t * 0.25 + u.phase) * 0.6; }
+    updateWing(t);
+  }
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const raw = Math.max(0, (now - last) / 1000); last = now;
+    const rdt = Math.min(0.05, raw);
+    if (speed > 0) {                               // 고배속에서는 한 프레임을 여러 단계로 나눠 계산한다
+      const n = Math.max(1, Math.ceil(speed / 2)), dt = rdt * speed / n;
+      for (let i = 0; i < n; i++) { simT += dt; simStep(dt, simT); }
+    }
+    measure(raw);
+    updateFocus(rdt);
+    if ((frameNo++ & 1) === 0) renderer.shadowMap.needsUpdate = true;
+    controls.update();
+    // 깊이 정밀도를 위해 near/far를 카메라 거리에 맞춰 좁힌다 (바닥 데칼 z-fighting 방지)
+    const cd = camera.position.distanceTo(controls.target);
+    const near = Math.max(0.5, cd - 190), far = cd + 340;
+    if (Math.abs(near - camera.near) > 0.5 || Math.abs(far - camera.far) > 0.5) { camera.near = near; camera.far = far; camera.updateProjectionMatrix(); }
+    drawSky(rdt * speed);
+    renderer.render(scene, camera);
+    hudClock += rdt; if (hudClock >= 0.25) { hudClock = 0; updateHud(); }
+    mapClock += rdt; if (mapClock >= 0.12) { mapClock = 0; drawMap(); }
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  updateScreens(0, 0, true);
+  simStep(0, 0);
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('600 28px "Chakra Petch"'), document.fonts.load('600 64px "IBM Plex Sans KR"', '조종실')])
+      .then(() => labelDraws.forEach(d => d())).catch(() => {});
+  }
+  window.__diorama = { crew, stations: allStations, doors, walkers, NAV, META, CORRS, setSpeed, selectRoom, frameAll };
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</body></html>
