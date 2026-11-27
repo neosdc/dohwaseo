@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>도화서</title>
+<meta name="description" content="Claude와 함께 만든 three.js 시각 작업물 모음">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f4f1ea;
+  --card:#fffdf8;
+  --fg:#22262a;
+  --muted:#5f666c;
+  --line:rgba(34,38,42,.14);
+  --accent:#a3402e;
+  --font-display:"Gowun Batang","Nanum Myeongjo",serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#17191b;
+    --card:#212427;
+    --fg:#e8e6e1;
+    --muted:#a2a8ad;
+    --line:rgba(232,230,225,.14);
+    --accent:#e0836f;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--font-body);word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:880px;margin:0 auto;padding:56px 16px 72px}
+header h1{font:700 2.6rem/1.1 var(--font-display);margin:0 0 6px;letter-spacing:.02em}
+header h1 small{font-size:1.1rem;color:var(--muted);margin-left:8px;font-weight:700}
+header p{margin:0;color:var(--muted);max-width:60ch}
+.list{list-style:none;margin:40px 0 0;padding:0;display:grid;gap:16px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.item h2{font:700 1.35rem/1.3 var(--font-display);margin:0 0 4px}
+.item h2 a{color:inherit;text-decoration:none}
+.item h2 a:hover{color:var(--accent)}
+.item p{margin:0 0 12px;color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.93rem}
+.links a{color:var(--accent);font-weight:600;text-decoration:none}
+.links a:hover{text-decoration:underline}
+footer{margin-top:48px;font-size:.88rem;color:var(--muted)}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>도화서 <small>圖畵署</small></h1>
+    <p>Claude와 함께 만든 시각 작업물(three.js 애니메이션, 3D 모형, 디오라마)을 모아 둔 곳입니다. 작업물마다 브라우저에서 바로 실행되며, three.js와 웹 폰트를 CDN에서 불러옵니다.</p>
+  </header>
+
+  <ul class="list">
+    <li class="item">
+      <h2><a href="home-84a/">우리 집 84A</a></h2>
+      <p>84A 확장형 평면을 옮긴 3D 집 모형. 오늘 날짜의 태양 위치에 따라 빛이 바뀌고, 집 둘러보기와 문 열고 닫기를 할 수 있습니다.</p>
+      <div class="links"><a href="home-84a/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/home-84a">설명과 원본</a></div>
+    </li>
+    <li class="item">
+      <h2><a href="coffee-shop/">Coffee Shop Diorama</a></h2>
+      <p>카페 경영 게임풍 툰 셰이딩 디오라마. 손님이 줄을 서서 주문하고, 점원이 음료를 만들며, 하루 영업이 흘러갑니다.</p>
+      <div class="links"><a href="coffee-shop/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/coffee-shop">설명과 원본</a></div>
+    </li>
+    <li class="item">
+      <h2><a href="haneul/">한울호 디오라마</a></h2>
+      <p>가상의 우주선 한울호(ISV-07) 주갑판 단면. 구획 26개 사이를 승무원과 로봇이 오가고, 함재기가 발진과 귀환을 반복합니다.</p>
+      <div class="links"><a href="haneul/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/haneul">설명과 원본</a></div>
+    </li>
+  </ul>
+
+  <footer>원본 저장소: <a href="https://github.com/neosdc/dohwaseo">github.com/neosdc/dohwaseo</a></footer>
+</main>
+</body>
+</html>
