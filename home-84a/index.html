@@ -667,7 +667,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
     B(289.6, 350, 290, 380, 1.0, 1.9, mats.mirror);
     B(254, 262, 262, 336, 0, H, mats.white); B(282, 262, 290, 336, 0, H, mats.white);
 
-    // 윤지방 wardrobe beside the door
+    // 작은방 wardrobe beside the door
     B(34, 397.5, 67, 411, 0, H, mats.greige);
 
     // laundry room (former utility balcony): washer + dryer, outdoor-unit room: AC condenser
@@ -705,7 +705,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
     // master bedroom: queen bed with headboard on the east wall
     F(240, 411, 287.5, 449, 0.05, 0.48, mats.linen); F(286.5, 409, 290, 451, 0, 1.15, mats.wood);
     F(278, 414, 286, 428, 0.48, 0.6, mats.white); F(278, 432, 286, 446, 0.48, 0.6, mats.white);
-    // 윤지방 (bedroom 1): single bed
+    // 작은방 (bedroom 1): single bed
     F(35, 428, 59, 476, 0.05, 0.45, mats.linen); F(35, 474, 59, 476.5, 0, 0.95, mats.wood);
     // 서재 (bedroom 2) is left empty
   }
@@ -818,7 +818,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
   /* ---------- room labels ---------- */
   const ROOMS = [
     ['현관', 52, 372], ['거실', 152, 440], ['주방·식당', 160, 304], ['욕실1', 104, 334], ['세탁실', 112, 290],
-    ['윤지방', 70, 446], ['서재', 226, 312], ['알파룸', 272, 300], ['욕실2', 244, 368], ['드레스룸', 274, 360, 1],
+    ['작은방', 70, 446], ['서재', 226, 312], ['알파룸', 272, 300], ['욕실2', 244, 368], ['드레스룸', 274, 360, 1],
     ['안방', 245, 432], ['발코니1', 232, 478, 1], ['실외기실', 275, 470, 1]
   ];
   const labelBox = document.getElementById('labels');
@@ -851,7 +851,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
     { name: '안방', eye: [214, 396, 1.5], look: [275, 462, 0.95] },
     { name: '드레스룸 · 알파룸', eye: [268, 394, 1.5], look: [272, 264, 1.2] },
     { name: '욕실2', eye: [250, 386, 1.5], look: [232, 344, 1.0] },
-    { name: '윤지방', eye: [92, 403, 1.5], look: [46, 474, 0.95] },
+    { name: '작은방', eye: [92, 403, 1.5], look: [46, 474, 0.95] },
     { name: '공용 욕실', eye: [97, 372, 1.55], look: [110, 310, 0.9] },
   ];
   const tour = { active: false, i: -1, t: 0, phase: 'move', from: null, to: null };
