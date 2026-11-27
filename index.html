@@ -28,15 +28,12 @@ main{max-width:880px;margin:0 auto;padding:56px 16px 72px}
 header h1{font:700 2.6rem/1.1 var(--font-display);margin:0 0 6px;letter-spacing:.02em}
 header h1 small{font-size:1.1rem;color:var(--muted);margin-left:8px;font-weight:700}
 .list{list-style:none;margin:40px 0 0;padding:0;display:grid;gap:16px}
-.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;transition:background .15s,border-color .15s}
+.item{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;color:inherit;text-decoration:none;transition:background .15s,border-color .15s}
 .item:hover{background:var(--card-hover);border-color:rgba(224,131,111,.35)}
-.item h2{font:700 1.35rem/1.3 var(--font-display);margin:0 0 4px}
-.item h2 a{color:inherit;text-decoration:none}
-.item h2 a:hover{color:var(--accent)}
-.item p{margin:0 0 12px;color:var(--muted)}
-.links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.93rem}
-.links a{color:var(--accent);font-weight:600;text-decoration:none}
-.links a:hover{text-decoration:underline}
+.item:hover h2{color:var(--accent)}
+.item:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.item h2{font:700 1.35rem/1.3 var(--font-display);margin:0 0 4px;transition:color .15s}
+.item p{margin:0;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -46,21 +43,18 @@ header h1 small{font-size:1.1rem;color:var(--muted);margin-left:8px;font-weight:
   </header>
 
   <ul class="list">
-    <li class="item">
-      <h2><a href="home-84a/">우리 집 84A</a></h2>
+    <li><a class="item" href="home-84a/">
+      <h2>우리 집 84A</h2>
       <p>84A 확장형 평면을 옮긴 3D 집 모형. 오늘 날짜의 태양 위치에 따라 빛이 바뀌고, 집 둘러보기와 문 열고 닫기를 할 수 있습니다.</p>
-      <div class="links"><a href="home-84a/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/home-84a">설명과 원본</a></div>
-    </li>
-    <li class="item">
-      <h2><a href="coffee-shop/">Coffee Shop Diorama</a></h2>
+    </a></li>
+    <li><a class="item" href="coffee-shop/">
+      <h2>Coffee Shop Diorama</h2>
       <p>카페 경영 게임풍 툰 셰이딩 디오라마. 손님이 줄을 서서 주문하고, 점원이 음료를 만들며, 하루 영업이 흘러갑니다.</p>
-      <div class="links"><a href="coffee-shop/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/coffee-shop">설명과 원본</a></div>
-    </li>
-    <li class="item">
-      <h2><a href="haneul/">한울호 디오라마</a></h2>
+    </a></li>
+    <li><a class="item" href="haneul/">
+      <h2>한울호 디오라마</h2>
       <p>가상의 우주선 한울호(ISV-07) 주갑판 단면. 구획 26개 사이를 승무원과 로봇이 오가고, 함재기가 발진과 귀환을 반복합니다.</p>
-      <div class="links"><a href="haneul/">작품 보기</a><a href="https://github.com/neosdc/dohwaseo/tree/main/haneul">설명과 원본</a></div>
-    </li>
+    </a></li>
   </ul>
 
 </main>
