@@ -198,8 +198,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   scene.background = new THREE.Color(0x8ed1f0);
   // isometric-style orthographic camera, like a management sim
   const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 200);
-  const HOME = new THREE.Vector3(20.2, 22.5, 28.5);
-  const HOME_TARGET = new THREE.Vector3(-2.4, 0.6, 2.4);
+  const HOME = new THREE.Vector3(20.2, 22.5, 29.6);
+  const HOME_TARGET = new THREE.Vector3(-2.4, 0.6, 3.5);
   camera.position.copy(HOME);
 
   const controls = new THREE.OrbitControls(camera, canvas);
@@ -462,11 +462,11 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     });
   }
   const plaques = [];
-  function plaque(text, bg, fg, w, h, x, y, z, rotY) {
+  function plaque(text, bg, fg, w, h, x, y, z, rotY, parent = scene) {
     const tex = plaqueTex(text, bg, fg);
     const m = noOutline(new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
     const o = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
-    o.position.set(x, y, z); o.rotation.y = rotY; scene.add(o);
+    o.position.set(x, y, z); o.rotation.y = rotY; parent.add(o);
     plaques.push({ m, text, bg, fg });
     return o;
   }
@@ -675,10 +675,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
      x −18…−10 is the back of house: stock room (back), bakery kitchen (middle), roastery (front),
      behind a glass partition at x = −10. The café proper is x −10…10 as before. */
   const X0 = -18, X1 = 10, Z0 = -7, Z1 = 7, CAFE_X0 = -10;
-  box(34, 0.36, 22, mats.grass, -2.8, -0.26, 2.4);
-  box(34, 1.3, 22, mats.dirt, -2.8, -1.09, 2.4);
-  box(33, 0.7, 21, mats.dirtDark, -2.8, -2.05, 2.4);
-  box(31.2, 0.5, 19.2, mats.dirtDark, -2.8, -2.55, 2.4);
+  box(34, 0.36, 24.6, mats.grass, -2.8, -0.26, 3.7);
+  box(34, 1.3, 24.6, mats.dirt, -2.8, -1.09, 3.7);
+  box(33, 0.7, 23.6, mats.dirtDark, -2.8, -2.05, 3.7);
+  box(31.2, 0.5, 21.8, mats.dirtDark, -2.8, -2.55, 3.7);
   box(28.4, 0.3, 14.4, mats.found, -4, -0.19, 0);
   box(20, 0.06, 14, mats.floor, 0, -0.03, 0);
   box(8, 0.06, 14, mats.quarry, -14, -0.03, 0);
@@ -1108,7 +1108,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     ball(0.26, mats.leaf2, 0, 1.08, 0, g, 8);
     return g;
   }
-  [[-9.4, 6.4, 1.1], [9.6, -6.4, 1.2], [2.4, -6.4, 1.0], [-4.8, 6.5, 0.85], [0.6, 6.5, 0.85], [4.8, 6.5, 0.85]].forEach(([x, z, s]) => makePlant(x, z, s));
+  [[9.6, -6.4, 1.2], [2.4, -6.4, 1.0], [-4.8, 6.5, 0.85], [0.6, 6.5, 0.85], [4.8, 6.5, 0.85]].forEach(([x, z, s]) => makePlant(x, z, s));
 
   /* ---------- stock room: two reach-in fridges, an ice machine, shelving ---------- */
   // fridges stand against the west wall, glass doors facing +x; the doors swing open when someone fetches stock
@@ -1275,10 +1275,172 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   plaque('ROASTERY', '#26332d', '#ffd682', 1.9, 0.48, X0 + 0.06, 3.3, 5.4, Math.PI / 2);
   makePendant(-13.0, 4.2, 4.25, 1.3);
 
-  /* ---------- the yard: path, trees, bushes, lamp, bench, A-frame sign ---------- */
-  const ENTRY = v3(8.6, 6.4), STREET = v3(8.6, 12.6);
+  /* ---------- the yard: entrance walk, lawn, garden, trees, lamps, benches, A-frame sign ----------
+     The front yard (z 7.2…16) has a brick entrance walk straight to the door at x 8.6; everything west of it
+     is the garden the dog lives in. */
+  const ENTRY = v3(8.6, 6.4), STREET = v3(8.6, 15.3);
+  const YARD_Z1 = 16.0, WALK_X0 = 7.7, WALK_X1 = 9.5;
   box(1.3, 0.03, 0.85, mats.mat, 8.6, 0.015, 6.45);
-  for (let i = 0; i < 7; i++) box(0.95, 0.08, 0.62, mats.stone, 8.6 + (i % 2 ? 0.15 : -0.15), -0.05, 7.5 + i * 0.85);
+
+  // mown lawn: stripes half a metre wide laid over the grass
+  const lawnTex = canvasTex(256, 256, (g, w, h) => {
+    for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#8bd06c' : '#79c25d'; g.fillRect(i * w / 8, 0, w / 8, h); }
+    for (let k = 0; k < 160; k++) { g.fillStyle = 'rgba(40,100,30,.14)'; g.fillRect(srand() * w, srand() * h, 2, 5); }
+  });
+  function lawn(x0, x1, z0, z1) {
+    const t = lawnTex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set((x1 - x0) / 4, (z1 - z0) / 4);
+    const o = box(x1 - x0, 0.02, z1 - z0, noOutline(M(0xffffff, { map: t })), (x0 + x1) / 2, -0.07, (z0 + z1) / 2); o.castShadow = false;
+  }
+  lawn(-19.6, WALK_X0 - 0.05, 7.25, 15.85);
+  lawn(WALK_X1 + 0.05, 14.0, 7.25, 15.85);
+  lawn(10.25, 14.0, -8.4, 7.25);
+  lawn(-19.6, -18.3, -8.4, 7.25);
+
+  // brick entrance walk with stone kerbs, and a little brick plaza in front of the door
+  const brickTex = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#e9dcc6'; g.fillRect(0, 0, w, h);
+    const rows = 8, bw = w / 4, bh = h / rows;
+    for (let r = 0; r < rows; r++) for (let c = -1; c < 5; c++) {
+      const x = c * bw + (r % 2 ? bw / 2 : 0);
+      g.fillStyle = `hsl(${12 + srand() * 10} ${48 + srand() * 12}% ${52 + srand() * 10}%)`;
+      rr(g, x + 3, r * bh + 3, bw - 6, bh - 6, 4); g.fill();
+    }
+  });
+  brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
+  function bricks(x0, x1, z0, z1) {
+    const t = brickTex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set((x1 - x0) / 1.6, (z1 - z0) / 1.6);
+    box(x1 - x0, 0.06, z1 - z0, M(0xffffff, { map: t }), (x0 + x1) / 2, -0.05, (z0 + z1) / 2).castShadow = false;
+  }
+  bricks(6.9, 10.3, 7.2, 8.5);
+  bricks(WALK_X0, WALK_X1, 8.5, YARD_Z1);
+  [WALK_X0 - 0.05, WALK_X1 + 0.05].forEach(x => box(0.1, 0.1, YARD_Z1 - 8.5, mats.stone, x, -0.02, (8.5 + YARD_Z1) / 2));
+
+  // rose arch where the walk meets the hedge, with a WELCOME sign
+  const ARCH_Z = 15.62;
+  [WALK_X0 - 0.15, WALK_X1 + 0.15].forEach(x => box(0.14, 2.3, 0.14, CM(0xfff6e6), x, 1.1, ARCH_Z));
+  const archTop = new THREE.Mesh(new THREE.TorusGeometry((WALK_X1 - WALK_X0) / 2 + 0.15, 0.07, 8, 26, Math.PI), CM(0xfff6e6));
+  archTop.position.set(8.6, 2.25, ARCH_Z); add(archTop);
+  const roseCols = [0xff6f9a, 0xff4d5e, 0xffb3c6, 0xffffff];
+  for (let i = 0; i < 26; i++) {
+    const a = R(0, Math.PI), r = (WALK_X1 - WALK_X0) / 2 + 0.15;
+    const onPost = i < 10, side = i % 2 ? WALK_X1 + 0.15 : WALK_X0 - 0.15;
+    const x = onPost ? side + R(-0.08, 0.08) : 8.6 + Math.cos(a) * r, y = onPost ? R(0.5, 2.1) : 2.25 + Math.sin(a) * r;
+    ball(R(0.1, 0.14), i % 3 ? mats.leaf : mats.leaf2, x, y, ARCH_Z + R(-0.08, 0.08), scene, 8);
+    if (i % 2 === 0) ball(0.06, CM(roseCols[i % 4], 'thin'), x + R(-0.06, 0.06), y + 0.06, ARCH_Z + 0.1, scene, 8);
+  }
+  plaque('WELCOME', '#fff6e6', '#3a2618', 1.2, 0.3, 8.6, 2.55, ARCH_Z + 0.09, 0);
+
+  // low bollard lights along the walk (they glow at night with the street lamp)
+  const bollards = [];
+  [9.6, 12.6].forEach(z => [WALK_X0 - 0.3, WALK_X1 + 0.3].forEach(x => {
+    cyl(0.07, 0.08, 0.5, mats.black, x, 0.18, z, scene, 12);
+    const m = noOutline(new THREE.MeshBasicMaterial({ color: 0x8a7a60 }));
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 12), m); top.position.set(x, 0.5, z); scene.add(top);
+    cyl(0.07, 0.11, 0.05, mats.black, x, 0.6, z, scene, 12);
+    bollards.push(m);
+  }));
+
+  // boxwood hedge along the front edge, open where the walk goes through
+  const hedgeMat = CM(0x4f9e4a);
+  function hedge(x0, x1, z) {
+    box(x1 - x0, 0.5, 0.5, hedgeMat, (x0 + x1) / 2, 0.17, z);
+    for (let x = x0 + 0.3; x < x1 - 0.1; x += 0.7) ball(0.24, x % 1.4 < 0.7 ? mats.leaf : mats.grassDark, x, 0.45, z + R(-0.05, 0.05), scene, 8);
+  }
+  hedge(-19.4, WALK_X0 - 0.35, ARCH_Z);
+  hedge(WALK_X1 + 0.35, 13.9, ARCH_Z);
+
+  // planter boxes along the open café front
+  const flowerCols = [0xff6f9a, 0xffd23f, 0xffffff, 0xff8a5c, 0xb48cff];
+  function planter(x0, x1, z) {
+    box(x1 - x0, 0.42, 0.46, mats.wood, (x0 + x1) / 2, 0.13, z);
+    box(x1 - x0 - 0.08, 0.04, 0.38, mats.dirtDark, (x0 + x1) / 2, 0.35, z);
+    for (let x = x0 + 0.22; x < x1 - 0.1; x += 0.55) ball(0.17, x % 1.1 < 0.55 ? CM(0x58b45a, 'none') : CM(0x86d06a, 'none'), x, 0.42, z, scene, 8);
+    for (let x = x0 + 0.15; x < x1 - 0.1; x += 0.28) ball(0.06, CM(pick(flowerCols), 'none'), x + R(-0.05, 0.05), R(0.52, 0.6), z + R(-0.12, 0.12), scene, 6);
+  }
+  planter(-17.6, -10.6, 7.55);
+  planter(-9.4, -1.2, 7.55);
+  planter(0.4, 6.6, 7.55);
+
+  // round flower bed with a young tree
+  const BED = v3(-1.2, 9.4);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.1, 8, 32), mats.stone); ring.rotation.x = Math.PI / 2; ring.position.set(BED.x, 0.02, BED.z); add(ring);
+  cyl(1.0, 1.0, 0.1, mats.dirtDark, BED.x, 0.0, BED.z, scene, 32);
+  for (let i = 0; i < 26; i++) {
+    const a = i / 26 * Math.PI * 2 * 3, r = 0.35 + (i % 3) * 0.22;
+    ball(0.07, CM(flowerCols[i % 5], 'none'), BED.x + Math.cos(a) * r, 0.12, BED.z + Math.sin(a) * r, scene, 6);
+  }
+
+  // pond with rocks and lily pads
+  const POND = v3(-12.6, 12.4);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.04, 32), noOutline(M(0x5fb8d9)));
+  water.scale.set(1.35, 1, 0.95); water.position.set(POND.x, -0.03, POND.z); water.receiveShadow = true; scene.add(water);
+  for (let i = 0; i < 16; i++) {
+    const a = i / 16 * Math.PI * 2;
+    const rock = ball(R(0.16, 0.24), CM(i % 3 ? 0xb8b0a4 : 0xd6cfc4), POND.x + Math.cos(a) * 1.42, 0.02, POND.z + Math.sin(a) * 1.0, scene, 8);
+    rock.scale.y = 0.6;
+  }
+  const lilies = [[-0.5, 0.2], [0.4, -0.3], [0.6, 0.35], [-0.2, -0.45]].map(([dx, dz], i) => {
+    const pad = cyl(0.17, 0.17, 0.012, CM(0x4f9e4a, 'thin'), POND.x + dx, 0.0, POND.z + dz, scene, 16);
+    if (i === 2) ball(0.05, CM(0xffb3c6, 'thin'), 0, 0.04, 0, pad, 8);
+    return { pad, phase: i * 1.7 };
+  });
+
+  // two raised herb beds by the roastery
+  [9.6, 12.2].forEach(z => {
+    box(0.9, 0.36, 1.7, mats.wood, -16.9, 0.1, z);
+    box(0.82, 0.04, 1.62, mats.dirtDark, -16.9, 0.29, z);
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 5; k++) {
+      const herb = [mats.leaf, mats.leaf2, hedgeMat][r];
+      ball(0.1, herb, -17.15 + r * 0.25, 0.37, z - 0.6 + k * 0.3, scene, 6);
+      if (r === 2 && k % 2 === 0) cyl(0.015, 0.015, 0.22, CM(0x9b6bd1, 'none'), -16.65, 0.45, z - 0.6 + k * 0.3, scene, 5);   // lavender
+    }
+  });
+
+  // bird bath
+  const BATH = v3(-3.6, 10.0);
+  cyl(0.1, 0.16, 0.6, mats.stone, BATH.x, 0.26, BATH.z, scene, 14);
+  cyl(0.34, 0.2, 0.1, mats.stone, BATH.x, 0.6, BATH.z, scene, 20);
+  cyl(0.29, 0.29, 0.02, noOutline(M(0x7cc8e6)), BATH.x, 0.645, BATH.z, scene, 20);
+
+  // pergola with climbing vines (a bench sits under it, below)
+  const PERGOLA = v3(3.6, 9.5);
+  [[-0.95, -0.6], [0.95, -0.6], [-0.95, 0.6], [0.95, 0.6]].forEach(([dx, dz]) => box(0.12, 2.3, 0.12, mats.wood, PERGOLA.x + dx, 1.07, PERGOLA.z + dz));
+  [-0.6, 0.6].forEach(dz => box(2.4, 0.12, 0.1, mats.wood, PERGOLA.x, 2.26, PERGOLA.z + dz));
+  for (let i = 0; i < 7; i++) box(0.08, 0.08, 1.6, mats.wood, PERGOLA.x - 0.9 + i * 0.3, 2.36, PERGOLA.z);
+  for (let i = 0; i < 14; i++) ball(R(0.12, 0.2), i % 2 ? mats.leaf : mats.leaf2, PERGOLA.x + R(-1.1, 1.1), 2.42 + R(-0.05, 0.08), PERGOLA.z + R(-0.7, 0.7), scene, 8);
+  for (let i = 0; i < 6; i++) ball(0.1, mats.leaf2, PERGOLA.x + (i % 2 ? 0.95 : -0.95), 0.5 + i * 0.3, PERGOLA.z + (i < 3 ? 0.6 : -0.6), scene, 8);
+
+  // stepping-stone garden path from the walk to the pond
+  for (let t = 0; ; t++) {
+    const x = WALK_X0 - 0.45 - t * 0.72;
+    if (x < -10.6) break;
+    const z = 12.0 + 0.6 * Math.sin(t * 0.42);
+    const st = cyl(R(0.24, 0.3), R(0.26, 0.32), 0.05, mats.stone, x, -0.045, z, scene, 14); st.castShadow = false;
+  }
+
+  // the doghouse, bowls and a ball
+  const KENNEL = v3(-6.0, 14.0), KENNEL_YAW = 0.6;
+  const kennel = new THREE.Group(); kennel.position.set(KENNEL.x, -0.06, KENNEL.z); kennel.rotation.y = KENNEL_YAW; scene.add(kennel);
+  box(1.06, 0.08, 1.16, mats.walnut, 0, 0.04, 0, kennel);
+  box(1.0, 0.7, 1.1, CM(0xd2493c), 0, 0.43, 0, kennel);
+  [-1, 1].forEach(sd => {
+    const half = box(0.72, 0.07, 1.3, mats.wallCap, sd * 0.27, 0.95, 0, kennel); half.rotation.z = -sd * 0.62;
+  });
+  // gable: a three-sided prism lying along the house, apex up, flattened to the roof pitch
+  const gable = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 1.1, 3), CM(0xd2493c));
+  gable.rotation.x = -Math.PI / 2; gable.scale.z = 0.41; gable.position.y = 0.9; add(gable, kennel);
+  box(0.42, 0.42, 0.03, CM(0x2a1a10, 'none'), 0, 0.3, 0.555, kennel);
+  const doorTop = cyl(0.21, 0.21, 0.03, CM(0x2a1a10, 'none'), 0, 0.51, 0.555, kennel, 20); doorTop.rotation.x = Math.PI / 2;
+  plaque('WOOF', '#fff6e6', '#3a2618', 0.42, 0.13, 0, 0.82, 0.56, 0, kennel);
+  const BOWLS = v3(-4.75, 14.5);
+  [[0, 0, 0xff6f59, 0x8a4f2a], [0.36, 0.18, 0x4a8fd6, 0x8fd3f0]].forEach(([dx, dz, c, fill]) => {
+    cyl(0.14, 0.11, 0.08, CM(c), BOWLS.x + dx, 0.0, BOWLS.z + dz, scene, 16);
+    cyl(0.12, 0.12, 0.01, CM(fill, 'none'), BOWLS.x + dx, 0.04, BOWLS.z + dz, scene, 16);
+  });
+  const dogBall = new THREE.Group(); scene.add(dogBall);
+  ball(0.085, CM(0xffc23a), 0, 0, 0, dogBall, 12);
+  const ballBand = new THREE.Mesh(new THREE.TorusGeometry(0.086, 0.012, 6, 20), CM(0xff6f59, 'none')); dogBall.add(ballBand);
+
   function makeTree(x, z, s) {
     const g = new THREE.Group(); g.position.set(x, -0.08, z); g.scale.setScalar(s); scene.add(g);
     cyl(0.13, 0.2, 1.5, mats.bark, 0, 0.75, 0, g, 10);
@@ -1287,17 +1449,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     ball(0.6, mats.leaf2, -0.5, 1.75, -0.15, g, 10);
     ball(0.5, mats.leaf, 0.1, 2.75, 0.1, g, 10);
   }
-  [[-19.0, -7.4, 1.15], [13.0, -6.6, 1.0], [-18.6, 11.6, 0.95], [-10.4, 11.9, 0.9], [13.0, 11.8, 1.05], [12.9, 1.4, 0.85]].forEach(([x, z, s]) => makeTree(x, z, s));
-  const flowerCols = [0xff6f9a, 0xffd23f, 0xffffff, 0xff8a5c];
+  [[-19.0, -7.4, 1.15], [13.0, -6.6, 1.0], [-18.9, 14.6, 0.95], [-9.0, 14.3, 0.9], [13.0, 11.8, 1.05], [12.9, 1.4, 0.85], [12.7, 14.9, 0.8]].forEach(([x, z, s]) => makeTree(x, z, s));
+  makeTree(BED.x, BED.z, 0.5);
   function bush(x, z, s) {
     const g = new THREE.Group(); g.position.set(x, -0.08, z); g.scale.setScalar(s); scene.add(g);
     ball(0.42, mats.grassDark, 0, 0.3, 0, g, 10); ball(0.32, mats.leaf2, 0.35, 0.22, 0.1, g, 10); ball(0.3, mats.leaf, -0.32, 0.2, 0.05, g, 10);
     for (let i = 0; i < 4; i++) ball(0.06, CM(pick(flowerCols), 'thin'), R(-0.45, 0.45), R(0.35, 0.62), R(0.1, 0.38), g, 6);
   }
-  [[-16.5, 12.9, 0.9], [-14, 12.9, 0.85], [-12, 12.9, 0.95],
-   [-9, 12.9, 1], [-6.5, 12.9, 0.85], [-4, 12.9, 1], [-1.5, 12.9, 0.8], [1, 12.9, 0.95], [3.5, 12.9, 0.85], [6, 12.9, 0.9],
-   [13.6, -3.8, 0.9], [13.6, -1.0, 0.8], [13.6, 4.6, 0.95], [13.6, 7.8, 0.85],
-   [-19.3, -4, 0.85], [-19.3, -1, 0.9], [-19.3, 2, 0.8], [-19.3, 5, 0.9], [-19.3, 8, 0.85]].forEach(([x, z, s]) => bush(x, z, s));
+  [[13.6, -3.8, 0.9], [13.6, -1.0, 0.8], [13.6, 4.6, 0.95], [13.6, 7.8, 0.85], [13.6, 10.0, 0.8], [11.0, 13.6, 0.85],
+   [-19.3, -4, 0.85], [-19.3, -1, 0.9], [-19.3, 2, 0.8], [-19.3, 5, 0.9], [-19.3, 8, 0.85], [-15.0, 14.6, 0.8], [5.6, 14.6, 0.85], [-1.0, 14.7, 0.75]].forEach(([x, z, s]) => bush(x, z, s));
   // street lamp by the path
   cyl(0.07, 0.09, 2.9, mats.black, 10.1, 1.37, 10.6);
   box(0.5, 0.06, 0.06, mats.black, 9.9, 2.82, 10.6);
@@ -1305,11 +1465,16 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   const sbulb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 10), streetBulbMat); sbulb.position.set(9.67, 2.62, 10.6); scene.add(sbulb);
   cyl(0.08, 0.24, 0.18, mats.black, 9.67, 2.76, 10.6, scene, 16);
   const streetLight = new THREE.PointLight(0xffc98a, 0, 7, 2); streetLight.position.set(9.67, 2.4, 10.6); scene.add(streetLight);
-  // bench on the lawn
-  const bench = new THREE.Group(); bench.position.set(12.4, -0.08, 6.0); bench.rotation.y = -Math.PI / 2; scene.add(bench);
-  box(1.5, 0.08, 0.46, mats.wood, 0, 0.47, 0, bench);
-  box(1.5, 0.32, 0.07, mats.wood, 0, 0.78, -0.21, bench);
-  [[-0.62], [0.62]].forEach(([x]) => { box(0.08, 0.47, 0.42, mats.black, x, 0.235, 0, bench); box(0.08, 0.5, 0.07, mats.black, x, 0.72, -0.21, bench); });
+  // benches: one on the east lawn, one under the pergola
+  function makeBench(x, z, rotY) {
+    const bench = new THREE.Group(); bench.position.set(x, -0.08, z); bench.rotation.y = rotY; scene.add(bench);
+    box(1.5, 0.08, 0.46, mats.wood, 0, 0.47, 0, bench);
+    box(1.5, 0.32, 0.07, mats.wood, 0, 0.78, -0.21, bench);
+    [[-0.62], [0.62]].forEach(([x]) => { box(0.08, 0.47, 0.42, mats.black, x, 0.235, 0, bench); box(0.08, 0.5, 0.07, mats.black, x, 0.72, -0.21, bench); });
+    return bench;
+  }
+  makeBench(12.4, 6.0, -Math.PI / 2);
+  makeBench(PERGOLA.x, PERGOLA.z - 0.15, 0);
   // A-frame sign at the door
   const aframe = new THREE.Group(); aframe.position.set(10.2, -0.06, 7.4); aframe.rotation.y = Math.PI * 0.32; scene.add(aframe);
   const fr = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.86, 0.04), [mats.wood, mats.wood, mats.wood, mats.wood, mats.board, mats.wood]);
@@ -2113,6 +2278,403 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     });
   }
 
+  /* ---------- the garden dog ----------
+     A little shiba-ish dog that lives in the garden west of the entrance walk. It wanders and sniffs,
+     sits, eats from its bowl, chases its ball, trots over to greet customers coming up the walk,
+     and sleeps in front of its doghouse at night. It never leaves the garden. */
+  function makeDog() {
+    const fur = CM(0xe3a35c), cream = CM(0xfff1dc), dark = CM(0x2a1a10, 'none');
+    const g = new THREE.Group(); scene.add(g);
+    const body = new THREE.Group(); g.add(body);
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.26, 4, 12), fur); torso.rotation.x = Math.PI / 2; torso.position.y = 0.32; add(torso, body);
+    const chest = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), cream); chest.position.set(0, 0.28, 0.15); add(chest, body);
+    const neck = new THREE.Group(); neck.position.set(0, 0.4, 0.2); body.add(neck);
+    const head = new THREE.Group(); head.position.set(0, 0.12, 0.05); neck.add(head);
+    add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), fur), head);
+    const cheeks = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), cream); cheeks.position.set(0, -0.045, 0.06); cheeks.scale.set(1.25, 0.8, 1); add(cheeks, head);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), cream); snout.position.set(0, -0.035, 0.125); snout.scale.set(1, 0.8, 1.2); add(snout, head);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 6), dark); nose.position.set(0, -0.012, 0.2); head.add(nose);
+    [-1, 1].forEach(s => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), dark); eye.position.set(s * 0.06, 0.03, 0.12); eye.scale.set(1, 1.2, 0.6); head.add(eye);
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.1, 4), fur); ear.position.set(s * 0.075, 0.13, -0.01); ear.rotation.set(-0.15, Math.PI / 4, -s * 0.28); add(ear, head);
+    });
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.022, 6, 16), CM(0xff4d5e)); collar.rotation.x = Math.PI / 2 - 0.5; collar.position.y = 0.02; add(collar, neck);
+    ball(0.022, CM(0xffc23a, 'thin'), 0, -0.02, 0.09, neck, 6);
+    const legs = [[-0.075, 0.15], [0.075, 0.15], [-0.075, -0.15], [0.075, -0.15]].map(([x, z]) => {
+      const hip = new THREE.Group(); hip.position.set(x, 0.24, z); body.add(hip);
+      const legGeo = new THREE.CapsuleGeometry(0.04, 0.12, 3, 8); legGeo.translate(0, -0.1, 0);
+      add(new THREE.Mesh(legGeo, fur), hip);
+      ball(0.042, cream, 0, -0.2, 0.01, hip, 6);
+      return hip;
+    });
+    const tailPivot = new THREE.Group(); tailPivot.position.set(0, 0.4, -0.22); body.add(tailPivot);
+    const tail = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.03, 8, 14, Math.PI * 1.4), fur);
+    tail.rotation.set(0, Math.PI / 2, 0.4); tail.position.set(0, 0.06, -0.02); add(tail, tailPivot);
+    g.scale.setScalar(1.15);
+    return { g, body, neck, legs, tailPivot };
+  }
+  const zTex = canvasTex(64, 64, (g, w, h) => {
+    g.font = '48px "Lilita One", "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineWidth = 8; g.strokeStyle = INK; g.strokeText('Z', w / 2, h / 2 + 2);
+    g.fillStyle = '#fffaf0'; g.fillText('Z', w / 2, h / 2 + 2);
+  });
+
+  const DOG_AREA = { x0: -10.4, x1: WALK_X0 - 1.0, z0: 8.7, z1: 14.95 };
+  const DOG_BLOCK = [[BED.x, BED.z, 1.3], [PERGOLA.x, PERGOLA.z, 1.35], [KENNEL.x, KENNEL.z, 0.95], [BOWLS.x + 0.18, BOWLS.z + 0.1, 0.45], [BATH.x, BATH.z, 0.45], [-9.0, 14.3, 0.4]];
+  const KENNEL_FRONT = v3(KENNEL.x + Math.sin(KENNEL_YAW) * 1.0, KENNEL.z + Math.cos(KENNEL_YAW) * 1.0);
+  const BOWL_SPOT = v3(BOWLS.x + 0.1, BOWLS.z - 0.55);
+  function segDist(a, b, px, pz) {
+    const dx = b.x - a.x, dz = b.z - a.z, L = dx * dx + dz * dz || 1;
+    const t = clamp(((px - a.x) * dx + (pz - a.z) * dz) / L, 0, 1);
+    return Math.hypot(a.x + dx * t - px, a.z + dz * t - pz);
+  }
+  const dogClear = (a, b) => DOG_BLOCK.every(([x, z, r]) => segDist(a, b, x, z) > r + 0.15);
+  const inBlock = (x, z, pad) => DOG_BLOCK.some(([bx, bz, r]) => Math.hypot(x - bx, z - bz) < r + pad);
+  function dogSpot() {
+    for (let i = 0; i < 40; i++) {
+      const x = R(DOG_AREA.x0 + 0.3, DOG_AREA.x1 - 0.3), z = R(DOG_AREA.z0 + 0.3, DOG_AREA.z1 - 0.4);
+      if (!inBlock(x, z, 0.3)) return v3(x, z);
+    }
+    return v3(-7.5, 11.0);
+  }
+  // straight there if nothing is in the way, otherwise via the shortest of a handful of detour points that clear both legs
+  function dogRoute(from, to) {
+    if (dogClear(from, to)) return [to.clone()];
+    let best = null, bestLen = Infinity;
+    for (let i = 0; i < 60; i++) {
+      const w = dogSpot();
+      if (!dogClear(from, w) || !dogClear(w, to)) continue;
+      const len = from.distanceTo(w) + w.distanceTo(to);
+      if (len < bestLen) { best = w; bestLen = len; }
+    }
+    return best ? [best, to.clone()] : [to.clone()];
+  }
+
+  const dog = Object.assign(makeDog(), {
+    pos: v3(-7.6, 12.2), face: 1.2, path: [], speed: 0.9, mode: 'sit', t: 3, phase: 0, wag: 0, greetCd: 8, zT: 0,
+    sit: 0, lie: 0, sniff: 0, hop: 0,
+  });
+  const ballState = { pos: v3(-4.2, 11.6), vel: v3(0, 0), spin: new THREE.Vector3() };
+  const dogNight = h => h >= 21.6 || h < 6.3;
+
+  function kickBall(dir) {
+    const a = Math.atan2(dir.x, dir.z) + R(-0.9, 0.9), sp = R(2.4, 3.6);
+    ballState.vel.set(Math.sin(a) * sp, 0, Math.cos(a) * sp);
+  }
+  function updateBall(dt) {
+    const b = ballState;
+    const sp = Math.hypot(b.vel.x, b.vel.z);
+    if (sp > 0.01) {
+      b.pos.x += b.vel.x * dt; b.pos.z += b.vel.z * dt;
+      const k = Math.max(0, 1 - dt * 1.3); b.vel.x *= k; b.vel.z *= k;
+      // bounce off the garden edges and anything solid
+      if (b.pos.x < DOG_AREA.x0 || b.pos.x > DOG_AREA.x1) { b.vel.x *= -0.7; b.pos.x = clamp(b.pos.x, DOG_AREA.x0, DOG_AREA.x1); }
+      if (b.pos.z < DOG_AREA.z0 || b.pos.z > DOG_AREA.z1) { b.vel.z *= -0.7; b.pos.z = clamp(b.pos.z, DOG_AREA.z0, DOG_AREA.z1); }
+      for (const [x, z, r] of DOG_BLOCK) {
+        const dx = b.pos.x - x, dz = b.pos.z - z, d = Math.hypot(dx, dz);
+        if (d < r && d > 1e-4) {
+          const nx = dx / d, nz = dz / d, dot = b.vel.x * nx + b.vel.z * nz;
+          if (dot < 0) { b.vel.x -= 1.7 * dot * nx; b.vel.z -= 1.7 * dot * nz; }
+          b.pos.x = x + nx * r; b.pos.z = z + nz * r;
+        }
+      }
+      dogBall.rotation.x += b.vel.z * dt / 0.085; dogBall.rotation.z -= b.vel.x * dt / 0.085;
+    }
+    dogBall.position.set(b.pos.x, 0.03, b.pos.z);
+  }
+
+  function dogDecide() {
+    if (dogNight(state.hour)) { dog.mode = 'toBed'; dog.path = dogRoute(dog.pos, KENNEL_FRONT); dog.speed = 0.8; return; }
+    const r = Math.random();
+    if (r < 0.42) { dog.mode = 'wander'; dog.path = dogRoute(dog.pos, dogSpot()); dog.speed = R(0.7, 1.0); }
+    else if (r < 0.62) { dog.mode = 'play'; dog.t = R(10, 15); dog.speed = 2.3; }
+    else if (r < 0.74) { dog.mode = 'toBowl'; dog.path = dogRoute(dog.pos, BOWL_SPOT); dog.speed = 0.9; }
+    else if (r < 0.88) { dog.mode = 'sit'; dog.t = R(3, 6); }
+    else { dog.mode = 'sniff'; dog.t = R(1.5, 3); }
+  }
+  // a customer coming up (or going down) the walk, close enough to the garden to be worth running over for
+  function walker() {
+    return customers.find(c => (c.state === 'enter' || c.state === 'leaving') && c.scale > 0.6 && c.pos.x > WALK_X0 - 0.2 && c.pos.x < WALK_X1 + 0.2 && c.pos.z > 9.2 && c.pos.z < 14.6);
+  }
+
+  function moveDog(dt) {
+    if (!dog.path.length) return false;
+    const t = dog.path[0], dx = t.x - dog.pos.x, dz = t.z - dog.pos.z, d = Math.hypot(dx, dz);
+    const stepLen = dog.speed * dt;
+    if (d <= stepLen + 0.01) { dog.pos.x = t.x; dog.pos.z = t.z; dog.path.shift(); }
+    else { dog.pos.x += dx / d * stepLen; dog.pos.z += dz / d * stepLen; }
+    if (d > 0.02) dog.face = Math.atan2(dx, dz);
+    return true;
+  }
+
+  function updateDog(dt) {
+    const night = dogNight(state.hour);
+    dog.greetCd -= dt;
+    let moving = false;
+    if (night && dog.mode !== 'toBed' && dog.mode !== 'sleep') dogDecide();
+    // somebody on the walk? drop everything (except sleep and dinner) and go say hello
+    if (!night && dog.greetCd <= 0 && ['wander', 'sit', 'sniff', 'play'].includes(dog.mode)) {
+      const c = walker();
+      if (c && Math.random() < 0.6) {
+        dog.mode = 'toGreet'; dog.greetee = c; dog.speed = 2.1;
+        dog.path = dogRoute(dog.pos, v3(DOG_AREA.x1, clamp(c.pos.z, DOG_AREA.z0 + 0.4, DOG_AREA.z1 - 0.3)));
+      }
+      dog.greetCd = R(6, 12);
+    }
+    switch (dog.mode) {
+      case 'wander': case 'toBowl': case 'toBed':
+        moving = moveDog(dt);
+        if (!moving) {
+          if (dog.mode === 'wander') { dog.mode = Math.random() < 0.5 ? 'sniff' : 'sit'; dog.t = R(1.5, 4); }
+          else if (dog.mode === 'toBowl') { dog.mode = 'eat'; dog.t = R(3, 5); dog.face = Math.atan2(BOWLS.x - dog.pos.x, BOWLS.z - dog.pos.z); }
+          else { dog.mode = 'sleep'; dog.face = KENNEL_YAW; }
+        }
+        break;
+      case 'toGreet':
+        moving = moveDog(dt);
+        if (!moving) {
+          dog.mode = 'greet'; dog.t = 2.6; dog.face = Math.PI / 2; dog.hop = 1;
+          popup(heartTex, tmpV.set(dog.pos.x, 1.15, dog.pos.z), 0.5, 0.5, 0.7, 1.2);
+          if (dog.greetee && customers.includes(dog.greetee)) dog.greetee.p.hop = Math.max(dog.greetee.p.hop, 0.7);
+        }
+        break;
+      case 'greet': case 'sit': case 'sniff': case 'eat':
+        dog.t -= dt;
+        if (dog.mode === 'greet' && dog.greetee && customers.includes(dog.greetee)) {
+          dog.face = lerpAngle(dog.face, Math.atan2(dog.greetee.pos.x - dog.pos.x, dog.greetee.pos.z - dog.pos.z), 1 - Math.exp(-dt * 6));
+        }
+        if (dog.t <= 0) { dog.greetCd = Math.max(dog.greetCd, dog.mode === 'greet' ? 14 : 0); dogDecide(); }
+        break;
+      case 'play': {
+        dog.t -= dt;
+        const b = ballState.pos, d = Math.hypot(b.x - dog.pos.x, b.z - dog.pos.z);
+        if (d < 0.32) { kickBall(v3(b.x - dog.pos.x, b.z - dog.pos.z)); dog.hop = 0.6; }
+        else if (Math.hypot(ballState.vel.x, ballState.vel.z) < 0.6 || !dog.path.length) dog.path = [b.clone()];
+        else dog.path = [b.clone()];
+        moving = moveDog(dt);
+        if (dog.t <= 0) { dog.mode = 'sit'; dog.t = R(3, 5); dog.path = []; }
+        break;
+      }
+      case 'sleep':
+        if (!night) { dog.mode = 'sit'; dog.t = 1.5; dog.hop = 0.5; break; }   // up and stretching
+        dog.zT -= dt;
+        if (dog.zT <= 0) { dog.zT = 1.6; popup(zTex, tmpV.set(dog.pos.x + 0.15, 0.75, dog.pos.z), 0.28, 0.28, 0.9, 1.8); }
+        break;
+    }
+    // keep out of the flower bed, pergola and doghouse if a chase pushes it in
+    for (const [x, z, r] of DOG_BLOCK) {
+      const dx = dog.pos.x - x, dz = dog.pos.z - z, d = Math.hypot(dx, dz), rr = dog.mode === 'sleep' || dog.mode === 'toBed' ? r * 0.85 : r;
+      if (d < rr && d > 1e-4) { dog.pos.x = x + dx / d * rr; dog.pos.z = z + dz / d * rr; }
+    }
+    dog.pos.x = clamp(dog.pos.x, DOG_AREA.x0, DOG_AREA.x1); dog.pos.z = clamp(dog.pos.z, DOG_AREA.z0, DOG_AREA.z1);
+    updateBall(dt);
+
+    // pose: blend towards sitting, lying (asleep) or nose-down (sniffing, eating)
+    const k = 1 - Math.exp(-dt * 6);
+    const wantSit = dog.mode === 'sit' || dog.mode === 'greet' ? 1 : 0, wantLie = dog.mode === 'sleep' ? 1 : 0;
+    const wantSniff = dog.mode === 'sniff' || dog.mode === 'eat' ? 1 : 0;
+    dog.sit += (wantSit - dog.sit) * k; dog.lie += (wantLie - dog.lie) * k; dog.sniff += (wantSniff - dog.sniff) * k;
+    dog.phase += dt * (moving ? 6 + dog.speed * 5 : 0);
+    const sw = moving ? Math.sin(dog.phase) * 0.7 : 0;
+    dog.legs.forEach((leg, i) => {
+      const front = i < 2, diag = (i === 0 || i === 3) ? 1 : -1;
+      let a = sw * diag;
+      a += front ? dog.sit * 0.5 : -dog.sit * 1.3;                    // sitting: haunches folded under
+      a += front ? -dog.lie * 1.35 : dog.lie * 1.35;                  // lying: legs stretched out front and back
+      leg.rotation.x = a;
+    });
+    dog.body.rotation.x = -dog.sit * 0.5;
+    let y = -dog.sit * 0.04 - dog.lie * 0.15 + (moving ? Math.abs(Math.cos(dog.phase)) * 0.025 : 0);
+    if (dog.hop > 0) { dog.hop = Math.max(0, dog.hop - dt * 2); y += Math.sin((1 - dog.hop) * Math.PI) * 0.12; }
+    dog.body.position.y = y;
+    dog.neck.rotation.x = dog.sniff * 0.75 + dog.sit * 0.35 + dog.lie * 0.25 + (dog.mode === 'sniff' ? Math.sin(elapsed * 9) * 0.06 : 0);
+    dog.neck.rotation.y = dog.mode === 'sit' ? Math.sin(elapsed * 0.7) * 0.4 : 0;
+    const wagRate = dog.mode === 'sleep' ? 0 : dog.mode === 'greet' || dog.mode === 'play' ? 22 : moving ? 12 : 7;
+    const wagAmp = dog.mode === 'sleep' ? 0 : dog.mode === 'greet' || dog.mode === 'play' ? 0.6 : 0.3;
+    dog.wag += dt * wagRate;
+    dog.tailPivot.rotation.z = Math.sin(dog.wag) * wagAmp;
+    dog.g.position.set(dog.pos.x, -0.06, dog.pos.z);
+    dog.g.rotation.y = lerpAngle(dog.g.rotation.y, dog.face, 1 - Math.exp(-dt * 8));
+  }
+  dog.g.rotation.y = dog.face;
+
+  /* ---------- the café cat ----------
+     A calico that lives indoors. It walks only along the café's aisles (the table-column aisles and the two
+     cross aisles), hops up onto the east windowsills or its cat tree, naps, grooms, sits and looks about,
+     wanders over to rub against a seated customer, and sleeps on its cushion at night. */
+  // cat tree in the front-west corner, a cushion on the east side of the room
+  const TOWER = v3(-9.45, 6.3), CUSHION = v3(9.6, 2.6);
+  box(0.62, 0.08, 0.62, CM(0xe8d6b8), TOWER.x, 0.04, TOWER.z);
+  cyl(0.09, 0.09, 1.4, mats.burlap, TOWER.x, 0.74, TOWER.z, scene, 12);
+  box(0.46, 0.06, 0.46, CM(0xe8d6b8), TOWER.x + 0.08, 0.72, TOWER.z - 0.08);
+  box(0.58, 0.07, 0.58, CM(0xe8d6b8), TOWER.x, 1.44, TOWER.z);
+  cyl(0.22, 0.22, 0.05, CM(0xff8a6e), TOWER.x, 1.5, TOWER.z, scene, 18);
+  cyl(0.004, 0.004, 0.3, mats.black, TOWER.x + 0.25, 0.53, TOWER.z - 0.25, scene, 4);
+  ball(0.045, CM(0xff6f9a, 'thin'), TOWER.x + 0.25, 0.37, TOWER.z - 0.25, scene, 8);
+  const cushionRim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.08, 8, 20), CM(0x6aa8e8)); cushionRim.rotation.x = Math.PI / 2; cushionRim.position.set(CUSHION.x, 0.07, CUSHION.z); add(cushionRim);
+  cyl(0.22, 0.22, 0.05, CM(0xcfe6ff), CUSHION.x, 0.04, CUSHION.z, scene, 18);
+
+  function makeCat() {
+    const white = CM(0xfff6ea), orange = CM(0xf0a050), blackish = CM(0x3a3330), pink = CM(0xff9fb0, 'none'), dark = CM(0x1d1410, 'none');
+    const g = new THREE.Group(); scene.add(g);
+    const body = new THREE.Group(); g.add(body);
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.2, 4, 12), white); torso.rotation.x = Math.PI / 2; torso.position.y = 0.2; add(torso, body);
+    [[orange, 0.05, 0.25, -0.05, 0.08], [blackish, -0.05, 0.25, 0.06, 0.07], [orange, -0.03, 0.27, -0.13, 0.06]].forEach(([m, x, y, z, r]) => {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m); p.position.set(x, y, z); p.scale.y = 0.55; add(p, body);
+    });
+    const neck = new THREE.Group(); neck.position.set(0, 0.26, 0.15); body.add(neck);
+    const head = new THREE.Group(); head.position.set(0, 0.07, 0.04); neck.add(head);
+    add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), white), head);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.102, 14, 10, 0, Math.PI, 0, Math.PI * 0.45), orange); cap.rotation.y = Math.PI / 2; add(cap, head);
+    [-1, 1].forEach(s => {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 4), s < 0 ? orange : blackish); ear.position.set(s * 0.06, 0.09, -0.005); ear.rotation.set(0, Math.PI / 4, -s * 0.3); add(ear, head);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.017, 8, 6), dark); eye.position.set(s * 0.042, 0.015, 0.088); eye.scale.set(1, 1.3, 0.6); head.add(eye);
+    });
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 5), pink); nose.position.set(0, -0.015, 0.1); head.add(nose);
+    const legs = [[-0.05, 0.11], [0.05, 0.11], [-0.05, -0.11], [0.05, -0.11]].map(([x, z]) => {
+      const hip = new THREE.Group(); hip.position.set(x, 0.15, z); body.add(hip);
+      const geo = new THREE.CapsuleGeometry(0.026, 0.09, 3, 8); geo.translate(0, -0.075, 0);
+      add(new THREE.Mesh(geo, white), hip);
+      return hip;
+    });
+    // tail: three segments that curl and sway
+    const tail = [];
+    let parent = new THREE.Group(); parent.position.set(0, 0.24, -0.17); body.add(parent);
+    for (let i = 0; i < 3; i++) {
+      const seg = new THREE.Group(); parent.add(seg);
+      const geo = new THREE.CapsuleGeometry(0.022, 0.08, 3, 8); geo.translate(0, 0.06, 0);
+      add(new THREE.Mesh(geo, i === 2 ? orange : white), seg);
+      tail.push(seg); parent = new THREE.Group(); parent.position.y = 0.11; seg.add(parent);
+    }
+    g.scale.setScalar(1.25);
+    return { g, body, neck, head, legs, tail };
+  }
+
+  // the cat's floor network: every spot hangs off an aisle; trips run along the aisle to a cross aisle and back up another
+  const CAT_CROSS = [LANE, FRONT_AISLE];
+  const catSpot = (ax, az, x, z, perch, face) => ({ anchor: v3(ax, az), pos: v3(x, z), perch, face });
+  const CAT_SPOTS = {
+    sill1: catSpot(3.15, -6.35, 4.4, -6.35, { y: 1.15, z: -6.8 }, Math.PI),
+    sill2: catSpot(6.0, -6.35, 8.0, -6.35, { y: 1.15, z: -6.8 }, Math.PI),
+    tower: catSpot(-9.4, FRONT_AISLE, -9.4, 5.92, { y: 1.53, z: TOWER.z, x: TOWER.x }, 0.6),
+    cushion: catSpot(9.0, CUSHION.z, CUSHION.x, CUSHION.z, null, -Math.PI / 2),
+    middle: catSpot(-3.5, 2.6, -3.5, 2.6, null, 0.8),
+  };
+  function catRoute(fromSpot, from, to) {
+    const a = fromSpot ? fromSpot.anchor : from, b = to.anchor;
+    const pts = [];
+    if (fromSpot && from.distanceTo(a) > 0.01) pts.push(a.clone());
+    if (Math.abs(a.x - b.x) > 0.01) {
+      const zc = CAT_CROSS.reduce((best, z) => Math.abs(a.z - z) + Math.abs(b.z - z) < Math.abs(a.z - best) + Math.abs(b.z - best) ? z : best, CAT_CROSS[0]);
+      pts.push(v3(a.x, zc), v3(b.x, zc));
+    }
+    pts.push(b.clone(), to.pos.clone());
+    return pts;
+  }
+
+  const cat = Object.assign(makeCat(), {
+    spot: CAT_SPOTS.sill1, pos: CAT_SPOTS.sill1.pos.clone(), y: 1.15, face: Math.PI, path: [], speed: 0.8,
+    mode: 'nap', t: 6, phase: 0, sway: 0, zT: 0, sit: 0, loaf: 0, groom: 0, hop: 0, jump: null, onPerch: true,
+  });
+  cat.pos.z = -6.8;
+  const catNight = h => h >= 22 || h < 6.6;
+
+  function catGo(spot) {
+    cat.mode = 'go'; cat.target = spot; cat.speed = Math.random() < 0.3 ? 1.7 : 1.0;
+    if (cat.onPerch && cat.spot.perch) { cat.mode = 'jumpDown'; startJump(cat.spot.pos.x, 0, cat.spot.pos.z); return; }
+    cat.path = catRoute(cat.spot, cat.pos, spot);
+  }
+  function startJump(x, y, z) {
+    cat.jump = { from: v3(cat.pos.x, cat.pos.z), fy: cat.y, to: v3(x, z), ty: y, t: 0 };
+    if (Math.hypot(x - cat.pos.x, z - cat.pos.z) > 0.02) cat.face = Math.atan2(x - cat.pos.x, z - cat.pos.z);
+  }
+  function catDecide() {
+    if (catNight(state.hour)) { if (cat.spot !== CAT_SPOTS.cushion || cat.onPerch) return catGo(CAT_SPOTS.cushion); cat.mode = 'nap'; cat.t = 30; return; }
+    const r = Math.random();
+    const seated = customers.filter(c => c.state === 'sitting' && c.seatLerp >= 1 && c.chair);
+    if (r < 0.22 && seated.length) {
+      const c = pick(seated);
+      cat.visit = c;
+      return catGo({ anchor: v3(c.chair.aisle, c.chair.pos.z), pos: v3(c.chair.aisle + (c.chair.pos.x < c.chair.aisle ? -0.22 : 0.22), c.chair.pos.z + 0.2), perch: null, visit: true });
+    }
+    if (r < 0.55) {
+      const options = Object.values(CAT_SPOTS).filter(s => s !== cat.spot);
+      return catGo(pickWeighted(options.map(s => ({ s, w: s.perch ? 2 : 1 }))).s);   // it likes being up high
+    }
+    cat.mode = r < 0.75 ? 'sit' : r < 0.9 ? 'groom' : 'nap'; cat.t = cat.mode === 'nap' ? R(8, 16) : R(3, 6);
+  }
+
+  function updateCat(dt) {
+    let moving = false;
+    if (catNight(state.hour) && cat.target !== CAT_SPOTS.cushion && cat.mode !== 'jumpDown' && cat.mode !== 'jumpUp' && !(cat.spot === CAT_SPOTS.cushion && !cat.onPerch)) catGo(CAT_SPOTS.cushion);
+    if (cat.mode === 'go') {
+      const t = cat.path[0];
+      if (t) {
+        const dx = t.x - cat.pos.x, dz = t.z - cat.pos.z, d = Math.hypot(dx, dz), stepLen = cat.speed * dt;
+        if (d <= stepLen + 0.01) { cat.pos.x = t.x; cat.pos.z = t.z; cat.path.shift(); } else { cat.pos.x += dx / d * stepLen; cat.pos.z += dz / d * stepLen; }
+        if (d > 0.02) cat.face = Math.atan2(dx, dz);
+        moving = true;
+      } else {
+        const s = cat.target; cat.spot = s.visit ? { anchor: s.anchor, pos: s.pos, perch: null } : s;
+        if (s.perch) { cat.mode = 'jumpUp'; startJump(s.perch.x ?? s.pos.x, s.perch.y, s.perch.z); }
+        else if (s.visit) {
+          cat.mode = 'rub'; cat.t = 3; cat.hop = 0.6;
+          const c = cat.visit;
+          if (c && customers.includes(c) && c.state === 'sitting') {
+            cat.face = Math.atan2(c.pos.x - cat.pos.x, c.pos.z - cat.pos.z);
+            c.p.hop = Math.max(c.p.hop, 0.5);
+            popup(heartTex, tmpV.set(cat.pos.x, 1.0, cat.pos.z), 0.42, 0.42, 0.6, 1.1);
+          }
+        } else { cat.mode = s === CAT_SPOTS.cushion ? 'nap' : 'sit'; cat.t = s === CAT_SPOTS.cushion ? R(10, 18) : R(3, 6); cat.face = s.face; }
+      }
+    } else if (cat.mode === 'jumpUp' || cat.mode === 'jumpDown') {
+      const j = cat.jump; j.t += dt / 0.55;
+      const u = Math.min(1, j.t);
+      cat.pos.x = j.from.x + (j.to.x - j.from.x) * u; cat.pos.z = j.from.z + (j.to.z - j.from.z) * u;
+      cat.y = j.fy + (j.ty - j.fy) * u + Math.sin(u * Math.PI) * 0.35;
+      if (u >= 1) {
+        cat.y = j.ty;
+        if (cat.mode === 'jumpUp') { cat.onPerch = true; cat.mode = 'nap'; cat.t = R(10, 20); cat.face = cat.spot.face; }
+        else { cat.onPerch = false; cat.mode = 'go'; cat.path = catRoute(cat.spot, cat.pos, cat.target); }
+      }
+    } else {
+      cat.t -= dt;
+      if (cat.mode === 'nap') { cat.zT -= dt; if (cat.zT <= 0) { cat.zT = 2.0; popup(zTex, tmpV.set(cat.pos.x + 0.1, cat.y + 0.55, cat.pos.z), 0.22, 0.22, 0.7, 1.8); } }
+      if (cat.mode === 'sit') cat.face += Math.sin(elapsed * 0.6) * dt * 0.3;
+      if (cat.t <= 0) catDecide();
+    }
+
+    // pose
+    const k = 1 - Math.exp(-dt * 6);
+    const wantSit = cat.mode === 'sit' || cat.mode === 'groom' || cat.mode === 'rub' ? 1 : 0, wantLoaf = cat.mode === 'nap' ? 1 : 0;
+    cat.sit += (wantSit - cat.sit) * k; cat.loaf += (wantLoaf - cat.loaf) * k; cat.groom += ((cat.mode === 'groom' ? 1 : 0) - cat.groom) * k;
+    cat.phase += dt * (moving ? 5 + cat.speed * 6 : 0);
+    const sw = moving ? Math.sin(cat.phase) * 0.6 : 0;
+    const jumping = cat.mode === 'jumpUp' || cat.mode === 'jumpDown';
+    cat.legs.forEach((leg, i) => {
+      const front = i < 2, diag = (i === 0 || i === 3) ? 1 : -1;
+      let a = sw * diag + (front ? cat.sit * 0.55 : -cat.sit * 1.4);
+      if (jumping) a = front ? -0.9 : 0.9;
+      if (front && i === 1 && cat.groom > 0.5) a = -1.9 + Math.sin(elapsed * 8) * 0.25;   // licking a paw
+      leg.rotation.x = a;
+      leg.scale.y = 1 - cat.loaf * 0.75;                                                    // tucked in like a loaf
+    });
+    cat.body.rotation.x = -cat.sit * 0.55;
+    cat.body.position.y = -cat.loaf * 0.1 - cat.sit * 0.03 + (cat.hop > 0 ? Math.sin((1 - cat.hop) * Math.PI) * 0.06 : 0);
+    if (cat.hop > 0) cat.hop = Math.max(0, cat.hop - dt * 2);
+    cat.neck.rotation.x = cat.loaf * 0.45 + cat.sit * 0.45 + cat.groom * 0.3 * (0.5 + 0.5 * Math.sin(elapsed * 4));
+    cat.neck.rotation.y = cat.mode === 'sit' ? Math.sin(elapsed * 0.9) * 0.6 : cat.mode === 'rub' ? Math.sin(elapsed * 5) * 0.4 : 0;
+    cat.sway += dt * (cat.mode === 'nap' ? 0.8 : moving ? 4 : 2);
+    const curl = cat.loaf;
+    cat.tail.forEach((seg, i) => {
+      seg.rotation.x = -0.5 + i * 0.35 - curl * (i ? 0.2 : 0.9);
+      seg.rotation.z = Math.sin(cat.sway - i * 0.7) * (cat.mode === 'nap' ? 0.12 : 0.35) + curl * 0.5;
+    });
+    cat.g.position.set(cat.pos.x, cat.y, cat.pos.z);
+    cat.g.rotation.y = lerpAngle(cat.g.rotation.y, cat.face, 1 - Math.exp(-dt * 8));
+  }
+  cat.g.rotation.y = cat.face;
+
   /* ---------- time of day ---------- */
   const C = (h) => new THREE.Color(h);
   const NIGHT = C(0x24305e), DAY = C(0x7cc4e6), DUSK = C(0xffa070), SUN_DAY = C(0xffffff), SUN_DUSK = C(0xffb07a);
@@ -2147,6 +2709,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     const streetOn = 1 - clamp(day * 2.2, 0, 1);
     streetLight.intensity = 1.6 * streetOn;
     streetBulbMat.color.setRGB(0.55 + 0.45 * streetOn, 0.5 + 0.38 * streetOn, 0.38 + 0.2 * streetOn);
+    bollards.forEach(m => m.color.copy(streetBulbMat.color));
 
     const open = isOpen(h);
     if (open !== signOpen) { signOpen = open; signMat.map = open ? openTex : closedTex; signMat.needsUpdate = true; }
@@ -2280,6 +2843,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     updateBaristas(dt);
     updateBackOfHouse(dt);
     updateMachines(dt);
+    updateDog(dt);
+    updateCat(dt);
+    lilies.forEach(l => { l.pad.rotation.y += dt * 0.05; l.pad.position.y = 0.0 + Math.sin(elapsed * 1.3 + l.phase) * 0.006; });
     for (const e of emitters) {
       e.acc += e.rate * dt;
       while (e.acc >= 1) { e.acc -= 1; emit(e.x, e.y, e.z, e.kind === 'smoke' ? 0.8 : e.rate > 3 ? 1 : 0.7, e.kind); }
@@ -2308,7 +2874,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
   // for poking around in dev tools
   window.__cafe = {
-    state, customers, baristas, baker, roaster, oven, roast, breadTables, DESSERTS, camera, controls, scene, renderer,
+    state, customers, baristas, baker, roaster, oven, roast, breadTables, DESSERTS, dog, cat, camera, controls, scene, renderer,
     setHour: h => { state.hour = clamp(h, 0, 23.999); },
     advance(seconds) { for (let t = 0; t < seconds; t += 1 / 30) step(1 / 30); },   // fast-forward the simulation without drawing
     look(x, z, zoom = 2.5) {
