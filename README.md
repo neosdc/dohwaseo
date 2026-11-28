@@ -11,7 +11,7 @@ GitHub Pages에서 바로 볼 수 있습니다: <https://neosdc.github.io/dohwas
 | 폴더 | 내용 | 보기 |
 |---|---|---|
 | [`home-84a/`](home-84a/) | 우리 집 84A 3D 모형 (three.js) | [Pages](https://neosdc.github.io/dohwaseo/home-84a/) |
-| [`coffee-shop/`](coffee-shop/) | 카페 경영 게임풍 3D 디오라마 (three.js) | [Pages](https://neosdc.github.io/dohwaseo/coffee-shop/) |
+| [`coffee-shop/`](coffee-shop/) | 베이커리·로스터리 카페 경영 게임풍 3D 디오라마 (three.js) | [Pages](https://neosdc.github.io/dohwaseo/coffee-shop/) |
 | [`haneul/`](haneul/) | 우주선 한울호 단면 3D 디오라마 (three.js) | [Pages](https://neosdc.github.io/dohwaseo/haneul/) |
 
 ## 규칙
