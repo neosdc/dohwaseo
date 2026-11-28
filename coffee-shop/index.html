@@ -53,7 +53,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--font-body);overflo
 .ico{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper-2)}
 .ico svg{width:16px;height:16px}
 .ico.coin{background:var(--gold);font:400 .95rem/1 var(--font-display);color:var(--ink);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
-.ico.cup{background:#ffd9c9}.ico.ppl{background:#cdeeff}.ico.seat{background:#d5f2df}
+.ico.cup{background:#ffd9c9}.ico.ppl{background:#cdeeff}.ico.seat{background:#d5f2df}.ico.bread{background:#ffe1b0}
 .ico.time{background:#fff0a8}.ico.time.night{background:#c9cdf7}
 .pill.day b+b{margin-left:2px}
 .pill .sep{width:2px;height:18px;background:var(--ink);opacity:.2;border-radius:2px}
@@ -118,12 +118,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10" fill="#fff" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M3 10l2-6h14l2 6c0 1.6-1.3 2.5-3 2.5S15 11.6 15 10c0 1.6-1.3 2.5-3 2.5S9 11.6 9 10c0 1.6-1.3 2.5-3 2.5S3 11.6 3 10z" fill="currentColor"/><path d="M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
     <symbol id="i-orbit" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.2-5.1" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M18.5 3v4.5H14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11.5L12 4l8.5 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v10h4.5v-5.5h3V20H18V10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bread" viewBox="0 0 24 24"><path d="M3 15.5C3.5 9.5 8 6 12 6s8.5 3.5 9 9.5c-1.6 1.4-3.4 1.6-4.6.6-1 1.6-3 2.2-4.4 2.2s-3.4-.6-4.4-2.2C6.4 17.1 4.6 16.9 3 15.5z" fill="#f3ac4c" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 7.2c.6 2.6.6 5.4 0 8.4M15 7.2c-.6 2.6-.6 5.4 0 8.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-bean" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="6.5" ry="9" transform="rotate(35 12 12)" fill="#8a5332" stroke="currentColor" stroke-width="2.2"/><path d="M8.6 17c2.6-1.6 2.4-4.4 3.4-6.2.9-1.7 2.4-2.6 3.4-3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="#ffd23f" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
 <div class="stage" id="stage">
-  <canvas id="c" aria-label="Isometric 3D café: three baristas make drinks while customers walk in, order at three tills, sit and leave"></canvas>
+  <canvas id="c" aria-label="Isometric 3D café with a bakery and roastery: baristas make drinks and plate cakes from the showcase, customers pick bread from the self-serve tables, order at three tills, sit and leave; a baker bakes and restocks, a roaster roasts beans, and the stock room holds the fridges and ice machine"></canvas>
   <div class="vignette"></div>
   <div class="ui">
     <header class="top">
@@ -136,7 +138,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         <div class="pill" title="Takings today"><span class="ico coin">₩</span><b id="revenue">0</b></div>
         <div class="pill" title="Cups served today"><span class="ico cup"><svg><use href="#i-cup"/></svg></span><b id="served">0</b><span class="lbl">served</span></div>
         <div class="pill" title="Customers in line"><span class="ico ppl"><svg><use href="#i-ppl"/></svg></span><b id="inline">0</b><span class="lbl">in line</span></div>
-        <div class="pill" title="Seats taken, out of 34"><span class="ico seat"><svg><use href="#i-seat"/></svg></span><b id="seated">0</b><span class="lbl">/ 34 seated</span></div>
+        <div class="pill" title="Bakery items sold today"><span class="ico bread"><svg><use href="#i-bread"/></svg></span><b id="baked">0</b><span class="lbl">bakery</span></div>
+        <div class="pill" id="seatpill" title="Seats taken"><span class="ico seat"><svg><use href="#i-seat"/></svg></span><b id="seated">0</b><span class="lbl" id="seatcap">seated</span></div>
       </div>
     </header>
     <div class="toasts" id="toasts"></div>
@@ -195,8 +198,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   scene.background = new THREE.Color(0x8ed1f0);
   // isometric-style orthographic camera, like a management sim
   const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 200);
-  const HOME = new THREE.Vector3(24, 22.5, 28.5);
-  const HOME_TARGET = new THREE.Vector3(1.4, 0.6, 2.4);
+  const HOME = new THREE.Vector3(20.2, 22.5, 28.5);
+  const HOME_TARGET = new THREE.Vector3(-2.4, 0.6, 2.4);
   camera.position.copy(HOME);
 
   const controls = new THREE.OrbitControls(camera, canvas);
@@ -215,7 +218,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     const w = stage.clientWidth, h = stage.clientHeight;
     renderer.setSize(w, h, false);
     const a = w / Math.max(h, 1);
-    const half = a >= 1.3 ? 12.6 : 12.6 * 1.3 / a * 0.92;
+    const half = a >= 1.3 ? 14.3 : 15.2 * 1.3 / a * 0.92;
     camera.left = -half * a; camera.right = half * a; camera.top = half; camera.bottom = -half;
     camera.updateProjectionMatrix();
   }
@@ -315,6 +318,20 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     }
   });
   tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping; tileTex.repeat.set(9, 1.1);
+  const tileTexBoh = tileTex.clone(); tileTexBoh.needsUpdate = true; tileTexBoh.repeat.set(3, 1.1);
+
+  // terracotta quarry tiles: back of house (stock room, bakery kitchen, roastery)
+  const quarryTex = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#8f5d45'; g.fillRect(0, 0, w, h);
+    const n = 4, s = w / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      g.fillStyle = `hsl(${17 + srand() * 6} ${44 + srand() * 10}% ${58 + srand() * 7}%)`;
+      g.fillRect(i * s + 3, j * s + 3, s - 6, s - 6);
+      g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(i * s + 6, j * s + 6, s - 20, 5);
+    }
+  });
+  quarryTex.wrapS = quarryTex.wrapT = THREE.RepeatWrapping;
+  quarryTex.repeat.set(4, 7);
 
   function drawMenu(g, w, h) {
     g.fillStyle = '#26332d'; g.fillRect(0, 0, w, h);
@@ -328,10 +345,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     g.textAlign = 'center'; g.fillText('MENU', w / 2, 52);
     g.strokeStyle = 'rgba(255,194,58,0.9)'; g.lineWidth = 4;
     g.beginPath(); g.moveTo(w / 2 - 120, 92); g.lineTo(w / 2 + 120, 92); g.stroke();
-    g.font = '800 30px "Nunito", "Avenir Next", sans-serif';
+    g.font = '800 28px "Nunito", "Avenir Next", sans-serif';
     MENU.forEach((m, i) => {
       const col = i % 2, row = Math.floor(i / 2);
-      const x0 = 70 + col * (w / 2), x1 = col ? w - 70 : w / 2 - 50, y = 145 + row * 64;
+      const x0 = 70 + col * (w / 2), x1 = col ? w - 70 : w / 2 - 50, y = 132 + row * 56;
       const price = m.price.toLocaleString('en-US');
       g.textAlign = 'left'; g.fillStyle = chalk; g.fillText(m.name.toUpperCase(), x0, y);
       g.textAlign = 'right'; g.fillStyle = 'rgba(255,214,130,0.98)'; g.fillText(price, x1, y);
@@ -346,16 +363,37 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   }
 
   /* ---------- the menu (prices in won) ---------- */
+  // iced drinks take a scoop from the bar's ice bin; cold brew is poured from the cold-brew dispensers
   const MENU = [
     { name: 'Espresso', price: 4000, kind: 'small', col: '#3b2416', w: 1 },
-    { name: 'Americano', price: 4500, kind: 'hot', col: '#4a2c1a', w: 3 },
-    { name: 'Caffè Latte', price: 5000, kind: 'hot', col: '#c89a6a', foam: true, w: 3 },
-    { name: 'Flat White', price: 5200, kind: 'hot', col: '#b98656', foam: true, w: 1.5 },
-    { name: 'Vanilla Latte', price: 5500, kind: 'hot', col: '#e6c08a', foam: true, w: 2 },
-    { name: 'Cold Brew', price: 5000, kind: 'iced', col: '#4a2a16', w: 2 },
+    { name: 'Americano', price: 4500, kind: 'hot', col: '#4a2c1a', w: 2.5 },
+    { name: 'Iced Americano', price: 4800, kind: 'iced', col: '#4a2c1a', w: 2.5 },
+    { name: 'Caffè Latte', price: 5000, kind: 'hot', col: '#c89a6a', foam: true, w: 2.5 },
+    { name: 'Iced Latte', price: 5500, kind: 'iced', col: '#c89a6a', w: 1.5 },
+    { name: 'Flat White', price: 5200, kind: 'hot', col: '#b98656', foam: true, w: 1 },
+    { name: 'Vanilla Latte', price: 5500, kind: 'hot', col: '#e6c08a', foam: true, w: 1.5 },
+    { name: 'Cold Brew', price: 5000, kind: 'iced', col: '#4a2a16', coldBrew: true, w: 2 },
   ];
-  const menuWeight = MENU.reduce((s, m) => s + m.w, 0);
-  function pickOrder() { let r = Math.random() * menuWeight; for (const m of MENU) { r -= m.w; if (r <= 0) return m; } return MENU[0]; }
+  // cakes and tarts in the chilled showcase: a barista plates them with the drink
+  const DESSERTS = [
+    { name: 'Strawberry Shortcake', short: 'Shortcake', price: 6500, kind: 'cake', sponge: '#fff0d2', cream: '#fffaf2', top: '#ff4d5e', w: 3 },
+    { name: 'Chocolate Cake', short: 'Choco Cake', price: 6000, kind: 'cake', sponge: '#6a3a22', cream: '#8a4f2a', top: '#3b2016', w: 2.5 },
+    { name: 'Cheesecake', short: 'Cheesecake', price: 6200, kind: 'cake', sponge: '#ffe6a6', cream: '#fff3cf', top: '#f0b04a', w: 2 },
+    { name: 'Fruit Tart', short: 'Fruit Tart', price: 5800, kind: 'tart', sponge: '#e8a656', cream: '#ffe08a', top: '#ff5a6e', w: 2 },
+  ];
+  // breads on the self-serve tables by the door: customers pick them onto a tray before queuing
+  const BREADS = [
+    { name: 'Croissant', short: 'Croissant', price: 3800, kind: 'croissant' },
+    { name: 'Pain au Chocolat', short: 'Pain Choco', price: 4200, kind: 'painchoc' },
+    { name: 'Salt Bread', short: 'Salt Bread', price: 3000, kind: 'saltbread' },
+    { name: 'Bagel', short: 'Bagel', price: 3500, kind: 'bagel' },
+  ];
+  function pickWeighted(list) {
+    const total = list.reduce((s, m) => s + (m.w || 1), 0);
+    let r = Math.random() * total;
+    for (const m of list) { r -= m.w || 1; if (r <= 0) return m; }
+    return list[0];
+  }
 
   const menuTex = canvasTex(1024, 400, drawMenu);
 
@@ -391,6 +429,47 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     g.font = '800 30px "Nunito", sans-serif'; g.fillText('VANILLA', w / 2, 184); g.fillText('LATTE', w / 2, 220);
     g.fillStyle = 'rgba(255,214,130,.98)'; g.font = '44px "Lilita One", sans-serif'; g.fillText('₩5,500', w / 2, 284);
   });
+
+  function drawBakeryBoard(g, w, h) {
+    g.fillStyle = '#26332d'; g.fillRect(0, 0, w, h);
+    g.textBaseline = 'middle';
+    g.fillStyle = 'rgba(248,244,232,.95)'; g.textAlign = 'center';
+    g.font = '40px "Lilita One", sans-serif'; g.fillText('BAKERY', w / 2, 40);
+    g.strokeStyle = 'rgba(255,194,58,.9)'; g.lineWidth = 4; g.beginPath(); g.moveTo(58, 68); g.lineTo(198, 68); g.stroke();
+    const section = (title, list, y0) => {
+      g.textAlign = 'left'; g.fillStyle = 'rgba(255,214,130,.98)'; g.font = '800 17px "Nunito", sans-serif';
+      g.fillText(title, 22, y0);
+      g.font = '800 19px "Nunito", sans-serif';
+      list.forEach((m, i) => {
+        const y = y0 + 27 + i * 25;
+        g.textAlign = 'left'; g.fillStyle = 'rgba(248,244,232,.95)'; g.fillText(m.short.toUpperCase(), 22, y);
+        g.textAlign = 'right'; g.fillStyle = 'rgba(255,214,130,.98)'; g.fillText((m.price / 1000).toFixed(1), w - 22, y);
+      });
+    };
+    section('FRESH BREAD · SELF-SERVE', BREADS, 92);
+    section('CAKES · ASK AT THE TILL', DESSERTS, 222);
+  }
+  const bakeryBoardTex = canvasTex(256, 352, drawBakeryBoard);
+
+  // small painted wall signs for the back-of-house rooms
+  function plaqueTex(text, bg, fg, w = 512, h = 128) {
+    return canvasTex(w, h, (g) => {
+      g.fillStyle = bg; rr(g, 6, 6, w - 12, h - 12, 22); g.fill();
+      g.strokeStyle = INK; g.lineWidth = 8; g.stroke();
+      g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `${Math.round(h * 0.5)}px "Lilita One", "Arial Rounded MT Bold", sans-serif`;
+      g.fillText(text, w / 2, h / 2 + 4);
+    });
+  }
+  const plaques = [];
+  function plaque(text, bg, fg, w, h, x, y, z, rotY) {
+    const tex = plaqueTex(text, bg, fg);
+    const m = noOutline(new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    const o = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+    o.position.set(x, y, z); o.rotation.y = rotY; scene.add(o);
+    plaques.push({ m, text, bg, fg });
+    return o;
+  }
 
   const steamTex = canvasTex(64, 64, (g) => {
     g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.arc(32, 32, 26, 0, 7); g.fill();
@@ -438,7 +517,59 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       drawIcon(g);
     });
   }
-  MENU.forEach(m => { m.tex = bubbleTex(g => drawDrink(g, m, 64, 62, 0.95)); });
+  function drawFood(g, f, cx, cy, k = 1) {
+    g.save(); g.translate(cx, cy); g.scale(k, k);
+    g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = 5;
+    if (f.kind === 'cake' || f.kind === 'tart') {
+      g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(0, 26, 40, 9, 0, 0, 7); g.fill(); g.stroke();
+    }
+    if (f.kind === 'cake') {
+      g.beginPath(); g.moveTo(-30, 22); g.lineTo(30, 22); g.lineTo(30, -4); g.lineTo(-30, -20); g.closePath();
+      g.fillStyle = f.sponge; g.fill();
+      g.save(); g.clip(); g.fillStyle = f.cream; g.fillRect(-32, 4, 64, 7); g.fillRect(-32, -26, 64, 9); g.restore();
+      g.beginPath(); g.moveTo(-30, 22); g.lineTo(30, 22); g.lineTo(30, -4); g.lineTo(-30, -20); g.closePath(); g.stroke();
+      g.fillStyle = f.top; g.beginPath(); g.arc(14, -15, 9, 0, 7); g.fill(); g.stroke();
+    } else if (f.kind === 'tart') {
+      g.beginPath(); g.moveTo(-30, 6); g.lineTo(30, 6); g.lineTo(25, 22); g.lineTo(-25, 22); g.closePath();
+      g.fillStyle = f.sponge; g.fill(); g.stroke();
+      g.beginPath(); g.ellipse(0, 6, 30, 9, 0, 0, 7); g.fillStyle = f.cream; g.fill(); g.stroke();
+      [['#ff5a6e', -13, 3], ['#6cc24a', 2, 1], ['#5a7be0', 15, 5], ['#ffb02e', -2, 8]].forEach(([c, x, y]) => {
+        g.fillStyle = c; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); g.lineWidth = 3; g.stroke();
+      });
+    } else if (f.kind === 'croissant') {
+      g.beginPath(); g.arc(0, 26, 36, Math.PI * 1.08, Math.PI * 1.92); g.arc(0, 32, 16, Math.PI * 1.85, Math.PI * 1.15, true); g.closePath();
+      g.fillStyle = '#f3ac4c'; g.fill(); g.stroke();
+      g.lineWidth = 3.5; [-14, 0, 14].forEach(x => { g.beginPath(); g.moveTo(x * 1.1, -8 + Math.abs(x) * 0.3); g.lineTo(x * 0.75, 14); g.stroke(); });
+    } else if (f.kind === 'painchoc') {
+      rr(g, -30, -12, 60, 30, 10); g.fillStyle = '#eea64a'; g.fill(); g.stroke();
+      g.fillStyle = '#5a3020'; g.fillRect(-26, -2, 8, 14); g.fillRect(18, -2, 8, 14);
+      g.lineWidth = 3.5; [-8, 4].forEach(x => { g.beginPath(); g.moveTo(x, -10); g.lineTo(x + 3, 16); g.stroke(); });
+    } else if (f.kind === 'saltbread') {
+      g.beginPath(); g.ellipse(0, 4, 32, 18, 0, 0, 7); g.fillStyle = '#f0c070'; g.fill(); g.stroke();
+      g.fillStyle = '#ffffff'; [[-12, -4], [2, -8], [14, -2], [-4, 2], [8, 4]].forEach(([x, y]) => g.fillRect(x, y, 4, 4));
+    } else if (f.kind === 'bagel') {
+      g.beginPath(); g.arc(0, 2, 28, 0, 7); g.arc(0, 2, 9, 0, 7, true); g.fillStyle = '#d99a50'; g.fill('evenodd');
+      g.beginPath(); g.arc(0, 2, 28, 0, 7); g.stroke(); g.beginPath(); g.arc(0, 2, 9, 0, 7); g.stroke();
+      g.fillStyle = '#fff6dc'; [[-16, -8], [12, -12], [18, 10], [-14, 14], [0, -20]].forEach(([x, y]) => g.fillRect(x, y, 3, 5));
+    }
+    g.restore();
+  }
+  // order bubble: the drink, with the cake or bread they're after as a badge
+  const bubbleCache = new Map();
+  function orderBubble(drink, food) {
+    const key = (drink ? drink.name : '-') + '|' + (food ? food.name : '-');
+    if (bubbleCache.has(key)) return bubbleCache.get(key);
+    const tex = bubbleTex(g => {
+      if (drink && food) {
+        drawDrink(g, drink, 50, 58, 0.78);
+        g.fillStyle = '#fffaf0'; g.strokeStyle = INK; g.lineWidth = 5;
+        g.beginPath(); g.arc(90, 76, 25, 0, 7); g.fill(); g.stroke();
+        drawFood(g, food, 90, 74, 0.5);
+      } else if (drink) drawDrink(g, drink, 64, 62, 0.95);
+      else drawFood(g, food, 64, 60, 1.05);
+    });
+    bubbleCache.set(key, tex); return tex;
+  }
   const heartTex = canvasTex(96, 96, g => {
     g.lineWidth = 7; g.strokeStyle = INK; g.fillStyle = '#ff5a76'; g.lineJoin = 'round';
     heartPath(g, 48, 58, 36); g.fill(); g.stroke();
@@ -518,21 +649,45 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     stone: M(0xf1e6d2),
     wood: M(0xc5834f),
     bark: M(0x7a4f2e),
+    // back of house
+    quarry: M(0xffffff, { map: quarryTex }),
+    tileBoh: M(0xffffff, { map: tileTexBoh }),
+    bohWall: M(0xf4ead8),
+    bohWainscot: M(0x9aa7a2),
+    darkSteel: M(0x5d646b),
+    roaster: M(0xd2493c),
+    copper: M(0xd98a4e),
+    burlap: M(0xc9a46a),
+    burlapDark: M(0xa98450),
+    greenBeans: noOutline(M(0x9db07a)),
+    roasted: noOutline(M(0x5a3420)),
+    dough: thin(M(0xfbe6c4)),
+    flour: noOutline(M(0xfff8ee)),
+    wicker: M(0xc8945a),
+    pallet: M(0xc9a067),
+    shelfGlass: noOutline(new THREE.MeshBasicMaterial({ color: 0xe8f8ff, transparent: true, opacity: 0.45, depthWrite: false })),
+    fridgeIn: noOutline(new THREE.MeshBasicMaterial({ color: 0xdaf2ff })),
+    ice: thin(M(0xe6f7ff)),
+    led: noOutline(new THREE.MeshBasicMaterial({ color: 0xffe2a8 })),
   };
 
-  /* ---------- island + room shell: a 20 m × 14 m café ---------- */
-  const X0 = -10, X1 = 10, Z0 = -7, Z1 = 7;
-  box(26, 0.36, 22, mats.grass, 1.2, -0.26, 2.4);
-  box(26, 1.3, 22, mats.dirt, 1.2, -1.09, 2.4);
-  box(25, 0.7, 21, mats.dirtDark, 1.2, -2.05, 2.4);
-  box(23.2, 0.5, 19.2, mats.dirtDark, 1.2, -2.55, 2.4);
-  box(20.4, 0.3, 14.4, mats.found, 0, -0.19, 0);
+  /* ---------- island + room shell: a 20 m × 14 m café, plus an 8 m back-of-house wing to the west ----------
+     x −18…−10 is the back of house: stock room (back), bakery kitchen (middle), roastery (front),
+     behind a glass partition at x = −10. The café proper is x −10…10 as before. */
+  const X0 = -18, X1 = 10, Z0 = -7, Z1 = 7, CAFE_X0 = -10;
+  box(34, 0.36, 22, mats.grass, -2.8, -0.26, 2.4);
+  box(34, 1.3, 22, mats.dirt, -2.8, -1.09, 2.4);
+  box(33, 0.7, 21, mats.dirtDark, -2.8, -2.05, 2.4);
+  box(31.2, 0.5, 19.2, mats.dirtDark, -2.8, -2.55, 2.4);
+  box(28.4, 0.3, 14.4, mats.found, -4, -0.19, 0);
   box(20, 0.06, 14, mats.floor, 0, -0.03, 0);
+  box(8, 0.06, 14, mats.quarry, -14, -0.03, 0);
 
-  // back wall with two windows over the east dining room; west wall
+  // back wall with two windows over the east dining room; west wall of the roastery wing
   const WALL_Z = Z0 - 0.125;
   const WINDOWS = [[3.0, 5.8], [6.6, 9.4]];
-  let wx = X0;
+  box(CAFE_X0 - X0, 4, 0.25, mats.bohWall, (X0 + CAFE_X0) / 2, 2, WALL_Z);
+  let wx = CAFE_X0;
   for (const [a, b] of WINDOWS) {
     box(a - wx, 4, 0.25, mats.wall, (a + wx) / 2, 2, WALL_Z);
     box(b - a, 1.15, 0.25, mats.wall, (a + b) / 2, 0.575, WALL_Z);
@@ -540,19 +695,38 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     wx = b;
   }
   box(X1 - wx, 4, 0.25, mats.wall, (X1 + wx) / 2, 2, WALL_Z);
-  box(0.25, 4, 14.25, mats.wall, X0 - 0.125, 2, -0.125);
-  // tiled splash behind the bar, wainscot elsewhere, chair rail
+  box(0.25, 4, 14.25, mats.bohWall, X0 - 0.125, 2, -0.125);
+  // tiled splash behind the bar and the cold-brew counter, wainscot elsewhere, chair rail
   box(11.8, 1.0, 0.04, mats.tile, -4.1, 1.45, Z0 + 0.02);
   box(11.8, 0.95, 0.04, mats.wainscot, -4.1, 0.475, Z0 + 0.02);
   box(8.2, 1.1, 0.04, mats.wainscot, 5.9, 0.55, Z0 + 0.02);
-  box(0.04, 1.1, 14, mats.wainscot, X0 + 0.02, 0.55, 0);
+  box(4.0, 1.0, 0.04, mats.tileBoh, -12, 1.45, Z0 + 0.02);
+  box(8.0, 0.95, 0.04, mats.bohWainscot, -14, 0.475, Z0 + 0.02);
+  box(0.04, 1.1, 14, mats.bohWainscot, X0 + 0.02, 0.55, 0);
   box(20, 0.07, 0.08, mats.trim, 0, 1.12, Z0 + 0.04);
   box(0.08, 0.07, 14, mats.trim, X0 + 0.04, 1.12, 0);
   // thick dark caps: the cut-away edge of the diorama walls
-  box(20.35, 0.14, 0.33, mats.wallCap, -0.1, 4.07, WALL_Z);
+  box(28.35, 0.14, 0.33, mats.wallCap, -4.1, 4.07, WALL_Z);
   box(0.33, 0.14, 14.3, mats.wallCap, X0 - 0.125, 4.07, -0.1);
   box(0.33, 4.0, 0.33, mats.wallCap, X0 - 0.125, 2.0, Z1 + 0.05);
   box(0.33, 4.0, 0.33, mats.wallCap, X1 + 0.05, 2.0, WALL_Z);
+
+  // glass partition between the café and the bakery kitchen / roastery, so customers can watch;
+  // it stops short of the bar so staff walk straight through behind the counters
+  const PART_Z0 = -2.8, PART_LEN = Z1 - PART_Z0, PART_CZ = (Z1 + PART_Z0) / 2;
+  box(0.14, 0.95, PART_LEN, mats.wainscot, CAFE_X0, 0.475, PART_CZ);
+  box(0.22, 0.07, PART_LEN + 0.05, mats.wallCap, CAFE_X0, 0.985, PART_CZ);
+  const partGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, PART_LEN), mats.glass);
+  partGlass.position.set(CAFE_X0, 2.12, PART_CZ); scene.add(partGlass);
+  for (let i = 0; i <= 4; i++) box(0.08, 2.24, 0.08, mats.black, CAFE_X0, 2.12, PART_Z0 + PART_LEN * i / 4);
+  box(0.14, 0.1, PART_LEN + 0.05, mats.black, CAFE_X0, 3.25, PART_CZ);
+
+  // stock room in the back corner (x −18…−14, z −7…−2): walls cut down low so its contents show
+  const STORE_X = -14, STORE_Z = -2, CUT_H = 1.35;
+  const lowWall = (w, d, x, z) => { box(w, CUT_H, d, mats.bohWall, x, CUT_H / 2, z); box(w + 0.06, 0.08, d + 0.06, mats.wallCap, x, CUT_H + 0.04, z); };
+  lowWall(0.14, 0.55, STORE_X, -6.725);                    // beside the door, by the back wall
+  lowWall(0.14, 3.15, STORE_X, -3.575);                    // door gap z −6.45…−5.15 lines up with the bar lane
+  lowWall(4.0, 0.14, (X0 + STORE_X) / 2, STORE_Z);
 
   // window frames + the street outside
   const frameM = mats.black;
@@ -582,9 +756,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   const BACK_Z = Z0 + 0.35, FRONT_Z = Z0 + 2.15, LANE_Z = Z0 + 1.2;   // staff walk along LANE_Z between the counters
   box(11.3, 0.9, 0.65, mats.walnut, -4.05, 0.45, BACK_Z);
   box(11.4, 0.06, 0.72, mats.marble, -4.05, 0.93, BACK_Z);
-  box(9.6, 1.02, 0.85, mats.slats, -3.8, 0.51, FRONT_Z);
-  box(9.8, 0.08, 1.0, mats.marble, -3.8, 1.055, FRONT_Z);
-  box(9.6, 0.06, 0.06, mats.brass, -3.8, 0.12, FRONT_Z + 0.45);
+  // the back counter carries on into the back of house in stainless steel: the cold-brew station
+  box(4.1, 0.9, 0.65, mats.steel, -11.75, 0.45, BACK_Z);
+  box(4.1, 0.06, 0.72, mats.darkSteel, -11.75, 0.93, BACK_Z);
+  // front counter: tills to the east, the chilled cake showcase at its west end
+  const FC_X0 = -5.05, FC_X1 = 1.0, FC_CX = (FC_X0 + FC_X1) / 2, FC_W = FC_X1 - FC_X0;
+  box(FC_W, 1.02, 0.85, mats.slats, FC_CX, 0.51, FRONT_Z);
+  box(FC_W + 0.2, 0.08, 1.0, mats.marble, FC_CX, 1.055, FRONT_Z);
+  box(FC_W, 0.06, 0.06, mats.brass, FC_CX, 0.12, FRONT_Z + 0.45);
 
   const TOP_BACK = 0.96, TOP_FRONT = 1.095;
   const machineCols = [0xff6f59, 0x32b08c, 0x4a8fd6];
@@ -607,15 +786,70 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     for (let k = 0; k < 6; k++) cyl(0.05, 0.04, 0.07, mats.cup, x - 0.5 + (k % 3) * 0.2, TOP_BACK + 0.645, z - 0.05 + Math.floor(k / 3) * 0.18, scene, 14);
     // grinder on the left, milk pitchers on the right of each machine
     box(0.3, 0.45, 0.35, mats.black, x - 0.98, TOP_BACK + 0.225, z);
-    cyl(0.17, 0.06, 0.32, mats.beans, x - 0.98, TOP_BACK + 0.61, z);
     cyl(0.18, 0.18, 0.04, mats.black, x - 0.98, TOP_BACK + 0.79, z);
     cyl(0.06, 0.07, 0.16, mats.steel, x + 1.05, TOP_BACK + 0.08, z + 0.2, scene, 14);
     cyl(0.06, 0.07, 0.16, mats.steel, x + 1.22, TOP_BACK + 0.08, z + 0.1, scene, 14);
     return { x, z, heads, lampMat, stand: v3(x, LANE_Z - 0.26), steam: [] };   // brew with your back to the lane's middle
   });
+  // grinder hoppers empty as drinks are made and the roaster tops them up with fresh beans
+  stations.forEach((st, i) => {
+    st.beans = [0.8, 0.55, 0.9][i];
+    const geo = new THREE.CylinderGeometry(0.17, 0.06, 0.32, 22); geo.translate(0, 0.16, 0);
+    st.beanMesh = add(new THREE.Mesh(geo, mats.beans)); st.beanMesh.position.set(st.x - 0.98, TOP_BACK + 0.45, st.z);
+  });
   for (let s = 0; s < 2; s++) for (let i = 0; i < 5; i++)
     cyl(0.07, 0.055, 0.1, mats.cup, 0.25 + s * 0.2, TOP_BACK + 0.05 + i * 0.075, BACK_Z, scene, 14);
   [[0.85, 0xc98b3b], [1.1, 0x32b08c], [1.35, 0xff6f59]].forEach(([x, c]) => box(0.2, 0.32, 0.13, CM(c), x, TOP_BACK + 0.16, BACK_Z - 0.1));
+  // under-counter milk fridge facing the lane
+  [0.5, 1.1].forEach(x => {
+    box(0.56, 0.62, 0.03, mats.steel, x, 0.42, BACK_Z + 0.34);
+    box(0.44, 0.5, 0.02, mats.fridgeIn, x, 0.42, BACK_Z + 0.355);
+    for (let k = 0; k < 3; k++) cyl(0.035, 0.035, 0.16, CM(0xffffff, 'thin'), x - 0.12 + k * 0.12, 0.3, BACK_Z + 0.33, scene, 10);
+    box(0.3, 0.03, 0.03, mats.steel, x, 0.68, BACK_Z + 0.37);
+  });
+
+  // ice bin sunk into the back counter between two stations; the ice drops as iced drinks go out
+  const ICE_X = -3.03;
+  box(0.52, 0.12, 0.05, mats.steel, ICE_X, TOP_BACK + 0.04, BACK_Z + 0.23);
+  box(0.52, 0.12, 0.05, mats.steel, ICE_X, TOP_BACK + 0.04, BACK_Z - 0.23);
+  box(0.05, 0.12, 0.5, mats.steel, ICE_X - 0.24, TOP_BACK + 0.04, BACK_Z);
+  box(0.05, 0.12, 0.5, mats.steel, ICE_X + 0.24, TOP_BACK + 0.04, BACK_Z);
+  const iceGeo = new THREE.BoxGeometry(0.42, 0.09, 0.4); iceGeo.translate(0, 0.045, 0);
+  const iceFill = add(new THREE.Mesh(iceGeo, mats.ice)); iceFill.position.set(ICE_X, TOP_BACK - 0.03, BACK_Z);
+  const scoop = cyl(0.04, 0.03, 0.1, mats.steel, ICE_X + 0.12, TOP_BACK + 0.1, BACK_Z + 0.1, scene, 10); scoop.rotation.z = 0.7;
+
+  /* ---------- cold-brew station: three slow-drip towers and two dispensers on the steel counter ---------- */
+  const drips = [];
+  [-13.25, -12.45, -11.65].forEach((x, i) => {
+    const g = new THREE.Group(); g.position.set(x, TOP_BACK, BACK_Z - 0.05); scene.add(g);
+    [-0.2, 0.2].forEach(dx => box(0.045, 1.28, 0.045, mats.walnut, dx, 0.64, -0.12, g));
+    [[1.26, 0.2], [0.86, 0.16], [0.36, 0.16]].forEach(([y, d]) => box(0.45, 0.04, d, mats.walnut, 0, y, -0.06, g));
+    ball(0.14, mats.glass, 0, 1.06, 0, g, 12);
+    const water = new THREE.Mesh(new THREE.SphereGeometry(0.115, 18, 12), noOutline(new THREE.MeshBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.75 })));
+    water.position.y = 1.05; g.add(water);
+    cyl(0.018, 0.018, 0.08, mats.steel, 0, 0.9, 0, g, 8);
+    cyl(0.075, 0.06, 0.2, mats.glass, 0, 0.7, 0, g, 16);
+    cyl(0.062, 0.055, 0.12, mats.roasted, 0, 0.66, 0, g, 16);
+    for (let k = 0; k < 3; k++) { const coil = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.009, 6, 16), mats.steel); coil.rotation.x = Math.PI / 2; coil.position.y = 0.42 + k * 0.045; g.add(coil); }
+    cyl(0.085, 0.085, 0.24, mats.glass, 0, 0.12, 0, g, 16);
+    const fillGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.22, 16); fillGeo.translate(0, 0.11, 0);
+    const fill = new THREE.Mesh(fillGeo, noOutline(M(0x4a2a16))); fill.position.y = 0.01; g.add(fill);
+    const dropMat = noOutline(new THREE.MeshBasicMaterial({ color: 0x6b3f22 }));
+    const d1 = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), dropMat); g.add(d1);
+    const d2 = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), dropMat); g.add(d2);
+    drips.push({ fill, d1, d2, phase: i * 0.37, level: 0.25 + i * 0.3 });
+  });
+  const URN_X = [-10.78, -10.12];
+  URN_X.forEach((x, i) => {
+    [-0.12, 0.12].forEach(dx => box(0.04, 0.12, 0.04, mats.black, x + dx, TOP_BACK + 0.06, BACK_Z));
+    cyl(0.21, 0.21, 0.56, mats.steel, x, TOP_BACK + 0.4, BACK_Z, scene, 22);
+    cyl(0.215, 0.215, 0.13, CM(i ? 0x32b08c : 0x3a3330), x, TOP_BACK + 0.42, BACK_Z, scene, 22);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.21, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), mats.steel);
+    dome.position.set(x, TOP_BACK + 0.68, BACK_Z); add(dome);
+    box(0.06, 0.06, 0.12, mats.steel, x, TOP_BACK + 0.2, BACK_Z + 0.25);
+    box(0.03, 0.12, 0.03, mats.black, x, TOP_BACK + 0.29, BACK_Z + 0.3);
+  });
+  const URN_SPOT_X = (URN_X[0] + URN_X[1]) / 2;
 
   // three tills along the front counter, tip jar at the end
   const ORDER_X = [0.2, -1.4, -3.0];
@@ -627,23 +861,140 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   cyl(0.08, 0.08, 0.18, mats.glass, 0.72, TOP_FRONT + 0.09, FRONT_Z + 0.25);
   ball(0.03, CM(0xffc23a, 'none'), 0.72, TOP_FRONT + 0.05, FRONT_Z + 0.25);
 
-  // long pastry case
-  const caseX = -6.4;
-  box(2.2, 0.04, 0.72, mats.marble, caseX, TOP_FRONT + 0.02, FRONT_Z);
-  const caseGlass = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.46, 0.72), mats.glass);
-  caseGlass.position.set(caseX, TOP_FRONT + 0.25, FRONT_Z); scene.add(caseGlass);
-  box(2.2, 0.04, 0.72, mats.walnut, caseX, TOP_FRONT + 0.48, FRONT_Z);
-  for (let i = 0; i < 6; i++) {
-    const cr = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.04, 8, 14, Math.PI), mats.pastry);
-    cr.rotation.x = -Math.PI / 2; cr.position.set(caseX - 0.8 + i * 0.32, TOP_FRONT + 0.075, FRONT_Z + 0.17); add(cr);
-    const dn = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.035, 8, 16), i % 2 ? mats.icing : mats.pastryDark);
-    dn.rotation.x = -Math.PI / 2; dn.position.set(caseX - 0.8 + i * 0.32, TOP_FRONT + 0.075, FRONT_Z - 0.13); add(dn);
+  // cookie jars at the west end of the till counter
+  [-4.62, -4.3].forEach((x, i) => {
+    cyl(0.11, 0.11, 0.24, mats.glass, x, TOP_FRONT + 0.12, FRONT_Z + 0.1, scene, 16);
+    for (let k = 0; k < 4; k++) cyl(0.075, 0.075, 0.022, i ? mats.pastryDark : mats.pastry, x, TOP_FRONT + 0.025 + k * 0.03, FRONT_Z + 0.1, scene, 14);
+    cyl(0.115, 0.115, 0.04, mats.walnut, x, TOP_FRONT + 0.26, FRONT_Z + 0.1, scene, 16);
+  });
+
+  /* ---------- 3D bakes: shared by the showcase, the bread tables, plates, trays and bags ---------- */
+  const foodMats = new Map();
+  const FM = c => { if (!foodMats.has(c)) foodMats.set(c, thin(M(new THREE.Color(c)))); return foodMats.get(c); };
+  function foodMesh(f) {
+    const g = new THREE.Group();
+    if (f.kind === 'cake') {
+      const wedge = (r, h, m, y) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10, 1, false, 0, Math.PI / 3), m); o.position.y = y; g.add(o); return o; };
+      wedge(0.15, 0.05, FM(f.sponge), 0.025); wedge(0.15, 0.015, FM(f.cream), 0.057); wedge(0.15, 0.04, FM(f.sponge), 0.084);
+      wedge(0.15, 0.02, FM(f.cream), 0.114);
+      const top = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), FM(f.top)); top.position.set(0.09, 0.14, 0.05); g.add(top);
+      g.children.forEach(o => { o.position.x -= 0.06; o.position.z -= 0.04; });
+    } else if (f.kind === 'tart') {
+      const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.065, 0.04, 16), FM(f.sponge)); shell.position.y = 0.02; g.add(shell);
+      const cream = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.012, 16), FM(f.cream)); cream.position.y = 0.042; g.add(cream);
+      [[0xff5a6e, -0.03, 0], [0x6cc24a, 0.02, 0.025], [0x5a7be0, 0.025, -0.025]].forEach(([c, x, z]) => {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), FM(c)); b.position.set(x, 0.055, z); g.add(b);
+      });
+    } else if (f.kind === 'croissant') {
+      const cr = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.036, 8, 14, Math.PI), mats.pastry);
+      cr.rotation.x = -Math.PI / 2; cr.position.y = 0.03; g.add(cr);
+    } else if (f.kind === 'painchoc') {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.055, 0.09), FM('#eea64a')); b.position.y = 0.028; g.add(b);
+      [-0.06, 0.06].forEach(x => { const c = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.035, 0.06), FM('#5a3020')); c.position.set(x, 0.028, 0); g.add(c); });
+    } else if (f.kind === 'saltbread') {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), FM('#f0c070')); b.scale.set(1.35, 0.75, 1); b.position.y = 0.04; g.add(b);
+    } else if (f.kind === 'bagel') {
+      const b = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.028, 8, 16), FM('#d99a50')); b.rotation.x = -Math.PI / 2; b.position.y = 0.028; g.add(b);
+    }
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    return g;
   }
+  function plateWith(foods) {
+    const g = new THREE.Group();
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.015, 20), mats.cup); plate.position.y = 0.008; g.add(plate);
+    foods.slice(0, 2).forEach((f, i, a) => {
+      const m = foodMesh(f); m.position.set(a.length > 1 ? (i ? 0.055 : -0.055) : 0, 0.016, 0); if (a.length > 1) m.scale.setScalar(0.8); g.add(m);
+    });
+    return g;
+  }
+  function trayOf(foods) {                     // customer's self-serve tray
+    const g = new THREE.Group();
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.26), CM(0x9a5f38)); t.position.y = 0.01; g.add(t);
+    foods.forEach((f, i) => { const m = foodMesh(f); m.scale.setScalar(0.85); m.position.set(-0.08 + i * 0.16, 0.02, 0); g.add(m); });
+    return g;
+  }
+  function paperBag() {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.1), mats.kraft); b.position.y = 0.1; g.add(b);
+    const fold = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, 0.06), mats.kraft); fold.position.set(0, 0.215, 0); g.add(fold);
+    return g;
+  }
+  function bakeTray(food, n = 6) {             // baker's sheet pan
+    const g = new THREE.Group();
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.025, 0.36), mats.steel); t.position.y = 0.012; g.add(t);
+    for (let i = 0; i < n; i++) { const m = food ? foodMesh(food) : new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), mats.dough); m.position.set(-0.16 + (i % 3) * 0.16, food ? 0.025 : 0.05, i < 3 ? -0.08 : 0.08); if (!food) m.scale.y = 0.7; g.add(m); }
+    return g;
+  }
+  function boxOf(color, w, h, d, ribbon) {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), CM(color)); b.position.y = h / 2; g.add(b);
+    if (ribbon) { const r = new THREE.Mesh(new THREE.BoxGeometry(w + 0.01, h + 0.01, 0.03), CM(ribbon, 'thin')); r.position.y = h / 2; g.add(r); }
+    return g;
+  }
+  function iceBucket() {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.2, 16), mats.steel); b.position.y = 0.1; g.add(b);
+    const ice = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.04, 16), mats.ice); ice.position.y = 0.19; g.add(ice);
+    return g;
+  }
+  // jute sack of green coffee, with a stencilled origin band
+  const SACK_BANDS = [0x2f8a6f, 0xd2493c, 0x4a8fd6, 0x3a2618];
+  function beanSack(band = SACK_BANDS[0]) {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.16, 6, 14), mats.burlap);   // plump, pillow-shaped
+    b.rotation.z = Math.PI / 2; b.scale.set(1, 1, 1.15); b.position.y = 0.13; g.add(b);
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.133, 0.133, 0.07, 14, 1, true), noOutline(CM(band, 'none')));
+    s.rotation.z = Math.PI / 2; s.scale.set(1, 1, 1.15); s.position.set(-0.03, 0.13, 0); g.add(s);
+    const t = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), mats.burlapDark); t.position.set(0.25, 0.14, 0); g.add(t);
+    return g;
+  }
+  // a pyramid of sacks lying on the floor: `rows` from the bottom, e.g. [3, 2, 1]
+  function sackStack(x, z, rows, rotY) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rotY; scene.add(g);
+    rows.forEach((n, r) => {
+      for (let i = 0; i < n; i++) {
+        const sk = beanSack(SACK_BANDS[(i + r * 2 + Math.round(x)) & 3]); sk.scale.setScalar(1.4);
+        sk.position.set((i - (n - 1) / 2) * 0.58, r * 0.35, R(-0.04, 0.04)); sk.rotation.y = Math.PI / 2 + R(-0.12, 0.12);
+        g.add(sk);
+      }
+    });
+    return g;
+  }
+  const beanBag = () => boxOf(0x2f8a6f, 0.16, 0.24, 0.1, 0xffc23a);
+
+  /* ---------- the chilled showcase: two tiers of cakes and tarts at the west end of the counter ---------- */
+  const SC_X0 = -8.6, SC_X1 = -5.05, SC_CX = (SC_X0 + SC_X1) / 2, SC_W = SC_X1 - SC_X0;
+  box(SC_W, 0.86, 0.85, mats.walnut, SC_CX, 0.43, FRONT_Z);
+  box(SC_W - 0.2, 0.5, 0.02, mats.slats, SC_CX, 0.45, FRONT_Z + 0.43);
+  box(SC_W + 0.06, 0.05, 0.9, mats.marble, SC_CX, 0.885, FRONT_Z);
+  const scFront = new THREE.Mesh(new THREE.BoxGeometry(SC_W, 0.64, 0.02), mats.glass);
+  scFront.position.set(SC_CX, 1.22, FRONT_Z + 0.39); scFront.rotation.x = -0.16; scene.add(scFront);
+  [SC_X0 + 0.01, SC_X1 - 0.01].forEach(x => { const sg = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.64, 0.8), mats.glass); sg.position.set(x, 1.22, FRONT_Z); scene.add(sg); });
+  box(SC_W + 0.04, 0.05, 0.86, mats.walnut, SC_CX, 1.565, FRONT_Z);
+  box(SC_W - 0.1, 0.02, 0.04, mats.led, SC_CX, 1.53, FRONT_Z + 0.3);
+  [[SC_X0 + 0.02, 0.4], [SC_X1 - 0.02, 0.4], [SC_X0 + 0.02, -0.4], [SC_X1 - 0.02, -0.4]].forEach(([x, dz]) => box(0.03, 0.66, 0.03, mats.brass, x, 1.22, FRONT_Z + dz));
+  const scShelf = new THREE.Mesh(new THREE.BoxGeometry(SC_W - 0.1, 0.02, 0.52), mats.shelfGlass);
+  scShelf.position.set(SC_CX, 1.2, FRONT_Z - 0.02); scene.add(scShelf);
+  // two tiers × two kinds × four slices; each slice is hidden when a barista plates it
+  DESSERTS.forEach((f, k) => {
+    f.avail = 4; f.slots = [];
+    const tier = k >> 1, half = k & 1;
+    for (let i = 0; i < 4; i++) {
+      const x = SC_X0 + 0.32 + (half * 4 + i) * 0.42;
+      const doily = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.006, 16), mats.cup);
+      doily.position.set(x, tier ? 1.215 : 0.913, FRONT_Z + 0.05); scene.add(doily);
+      const m = foodMesh(f); m.position.set(x, tier ? 1.218 : 0.916, FRONT_Z + 0.05); m.rotation.y = 0.5; m.scale.setScalar(1.25); scene.add(m);
+      f.slots.push(m);
+    }
+  });
 
   // menu board flanked by two "today's pick" boards, pipe rail over the counter
   box(3.8, 1.6, 0.08, mats.wallCap, -4.6, 2.95, Z0 + 0.03);
   plane(3.6, 1.4, mats.menu, -4.6, 2.95, Z0 + 0.075).receiveShadow = true;
-  [-8.3, -0.9].forEach(x => { box(1.1, 1.5, 0.08, mats.wallCap, x, 2.95, Z0 + 0.03); plane(0.95, 1.3, mats.board, x, 2.95, Z0 + 0.075); });
+  const bakeryBoardMat = noOutline(M(0xffffff, { map: bakeryBoardTex }));
+  box(1.1, 1.5, 0.08, mats.wallCap, -8.3, 2.95, Z0 + 0.03); plane(0.95, 1.3, bakeryBoardMat, -8.3, 2.95, Z0 + 0.075);
+  box(1.1, 1.5, 0.08, mats.wallCap, -0.9, 2.95, Z0 + 0.03); plane(0.95, 1.3, mats.board, -0.9, 2.95, Z0 + 0.075);
+  plaque('COLD BREW', '#26332d', '#ffd682', 1.5, 0.38, -12.45, 2.55, Z0 + 0.05, 0);
   const pipe = cyl(0.035, 0.035, 10, mats.black, -3.8, 4.25, FRONT_Z, scene, 12);
   pipe.rotation.z = Math.PI / 2;
 
@@ -655,9 +1006,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   const sun = new THREE.DirectionalLight(0xffffff, 0.9);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 90 });
+  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 100 });
   sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
-  sun.target.position.set(1, 0, 1);
+  sun.target.position.set(-3, 0, 1);
   scene.add(sun, sun.target);
 
   const pendants = [];
@@ -683,6 +1034,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   }
   pointLamp(-6.2, 2.8, FRONT_Z + 0.15, 2.2, 9); pointLamp(-1.4, 2.8, FRONT_Z + 0.15, 2.2, 9);
   [[-6.5, 0.2], [-2.8, 2.8], [5.9, -3.4], [5.9, 2.4]].forEach(([x, z]) => pointLamp(x, 2.6, z, 2.0, 8));   // one lamp per quarter of the dining floor
+  [[-16, -4.4], [-12.2, -1.6], [-14.2, 4.2]].forEach(([x, z]) => pointLamp(x, 2.7, z, 1.9, 7.5));            // stock room, bakery kitchen, roastery
 
   /* ---------- seating: two dining rooms reached by aisles ---------- */
   const LANE = -3.45, FRONT_AISLE = 5.7;   // cross-aisle in front of the tills, and the aisle along the open front
@@ -713,9 +1065,37 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   // west room: 3 × 3 tables
   [-8, -5, -2].forEach((tx, ci) => [-1.6, 1.2, 4.0].forEach((tz, ri) =>
     addTable(tx, tz, [-9.4, -6.5, -3.5][ci], [-6.5, -3.5, -0.5][ci], chairCols[(ci + ri) % 4])));
-  // east room, under the windows: 2 × 4 tables
-  [4.5, 7.5].forEach((tx, ci) => [-5.1, -1.8, 1.2, 4.0].forEach((tz, ri) =>
+  // east room, under the windows: 2 × 3 tables (the row by the door holds the bread tables)
+  [4.5, 7.5].forEach((tx, ci) => [-5.1, -1.8, 1.2].forEach((tz, ri) =>
     addTable(tx, tz, [3.15, 6.0][ci], [6.0, 9.0][ci], chairCols[(ci + ri + 1) % 4])));
+
+  /* ---------- self-serve bread tables by the door ----------
+     Each table holds four baskets of three; customers pick from the front (z 4.95),
+     the baker refills from the back (z 3.05). */
+  const BREAD_Z = 4.0, BROWSE_Z = 4.95, REFILL_Z = 3.05;
+  const breadTables = [[4.5, [0, 1, 2, 3]], [7.5, [2, 0, 3, 1]]].map(([tx, kinds]) => {
+    box(1.7, 0.06, 0.95, mats.oak, tx, 0.78, BREAD_Z);
+    box(1.6, 0.12, 0.85, mats.walnut, tx, 0.69, BREAD_Z);
+    [[-0.78, -0.4], [0.78, -0.4], [-0.78, 0.4], [0.78, 0.4]].forEach(([dx, dz]) => box(0.07, 0.75, 0.07, mats.black, tx + dx, 0.375, BREAD_Z + dz));
+    box(1.5, 0.04, 0.75, mats.walnut, tx, 0.18, BREAD_Z);
+    makePendant(tx, BREAD_Z, 4.3, 1.75);
+    const baskets = kinds.map((k, i) => {
+      const bx = tx - 0.6 + i * 0.4, type = BREADS[k];
+      box(0.36, 0.06, 0.66, mats.wicker, bx, 0.84, BREAD_Z);
+      box(0.3, 0.02, 0.6, CM(0xfff1d6, 'none'), bx, 0.865, BREAD_Z);
+      const tag = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.01), CM(0xfffaf0, 'thin'));
+      tag.position.set(bx, 0.9, BREAD_Z + 0.36); tag.rotation.x = -0.4; add(tag);
+      const meshes = [-0.18, 0, 0.18].map(dz => { const m = foodMesh(type); m.position.set(bx, 0.875, BREAD_Z + dz); m.rotation.y = R(-0.4, 0.4); scene.add(m); return m; });
+      return { x: bx, type, count: 3, meshes };
+    });
+    // a stack of trays and tongs at the front corner
+    for (let k = 0; k < 4; k++) box(0.34, 0.018, 0.24, CM(0x9a5f38), tx + 0.95, 0.5 + k * 0.022, BREAD_Z + 0.25);
+    box(0.4, 0.5, 0.3, mats.walnut, tx + 0.95, 0.245, BREAD_Z + 0.25);
+    return { x: tx, baskets, browse: [v3(tx - 0.4, BROWSE_Z), v3(tx + 0.4, BROWSE_Z)] };
+  });
+  const breadStock = () => breadTables.reduce((s, t) => s + t.baskets.reduce((a, b) => a + b.count, 0), 0);
+  const BREAD_FULL = breadTables.length * 4 * 3;
+  function syncBasket(b) { b.meshes.forEach((m, i) => { m.visible = i < b.count; }); }
 
   /* ---------- decor inside ---------- */
   function makePlant(x, z, s) {
@@ -730,21 +1110,170 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   }
   [[-9.4, 6.4, 1.1], [9.6, -6.4, 1.2], [2.4, -6.4, 1.0], [-4.8, 6.5, 0.85], [0.6, 6.5, 0.85], [4.8, 6.5, 0.85]].forEach(([x, z, s]) => makePlant(x, z, s));
 
-  // retail shelf and two prints on the west wall
-  box(0.34, 0.06, 3.4, mats.walnut, -9.82, 2.05, 0.9);
-  box(0.34, 0.06, 3.4, mats.walnut, -9.82, 2.75, 0.9);
-  const bagColors = [0xe0ad6c, 0x32b08c, 0xc98b3b, 0xff6f59, 0xffc23a];
-  for (let i = 0; i < 9; i++) box(0.16, 0.26, 0.13, CM(bagColors[i % 5]), -9.8, 2.21, -0.6 + i * 0.36);
-  for (let i = 0; i < 6; i++) {
-    cyl(0.07, 0.07, 0.2, mats.glass, -9.8, 2.88, -0.5 + i * 0.5, scene, 14);
-    cyl(0.06, 0.06, 0.12, mats.beans, -9.8, 2.84, -0.5 + i * 0.5, scene, 14);
-    cyl(0.075, 0.075, 0.04, mats.black, -9.8, 3.0, -0.5 + i * 0.5, scene, 14);
-  }
-  [4.6, -2.6].forEach(z => {
-    box(0.05, 1.2, 1.0, mats.wallCap, -9.97, 2.4, z);
-    const art = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.05), mats.art);
-    art.rotation.y = Math.PI / 2; art.position.set(-9.94, 2.4, z); scene.add(art);
+  /* ---------- stock room: two reach-in fridges, an ice machine, shelving ---------- */
+  // fridges stand against the west wall, glass doors facing +x; the doors swing open when someone fetches stock
+  const fridges = [-6.35, -5.45].map((fz, i) => {
+    const fx = X0 + 0.42;
+    box(0.78, 2.0, 0.86, mats.steel, fx, 1.0, fz);
+    box(0.02, 1.62, 0.7, mats.fridgeIn, fx + 0.38, 1.07, fz);
+    [0.55, 0.95, 1.35, 1.72].forEach(y => box(0.5, 0.02, 0.66, mats.shelfGlass, fx + 0.1, y, fz));
+    for (let k = 0; k < 3; k++) for (let r = 0; r < 4; r++) {
+      if (i === 0) cyl(0.04, 0.04, 0.2, CM(r % 2 ? 0xffffff : 0xe8f4ff, 'thin'), fx + 0.24, 0.66 + k * 0.4, fz - 0.24 + r * 0.16, scene, 10);
+      else box(0.22, 0.14, 0.14, CM([0xffd0de, 0xfff6e6, 0xffe2b0][k], 'thin'), fx + 0.2, 0.63 + k * 0.4, fz - 0.22 + r * 0.15);
+    }
+    box(0.8, 0.22, 0.88, mats.darkSteel, fx, 2.11, fz);
+    const hinge = new THREE.Group(); hinge.position.set(fx + 0.41, 0, fz - 0.4); scene.add(hinge);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.72, 0.78), mats.glass); door.position.set(0, 1.07, 0.39); hinge.add(door);
+    [[0, 1.94, 0.39, 0.06, 0.06, 0.8], [0, 0.2, 0.39, 0.06, 0.06, 0.8], [0, 1.07, 0.02, 0.06, 1.78, 0.05], [0, 1.07, 0.76, 0.06, 1.78, 0.05]]
+      .forEach(([x, y, z, w, h, d]) => box(w, h, d, mats.darkSteel, x, y, z, hinge));
+    box(0.04, 0.5, 0.04, mats.steel, 0.05, 1.1, 0.7, hinge);
+    return { hinge, open: 0, want: 0 };
   });
+  // ice machine against the back wall: bin below, ice maker head above, slanted scoop door
+  const ICE_MX = -15.6;
+  box(0.86, 0.95, 0.72, mats.steel, ICE_MX, 0.475, Z0 + 0.42);
+  box(0.86, 0.55, 0.72, mats.bohWainscot, ICE_MX, 1.23, Z0 + 0.42);
+  box(0.7, 0.05, 0.04, mats.darkSteel, ICE_MX, 1.38, Z0 + 0.79);
+  const iceLed = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), noOutline(new THREE.MeshBasicMaterial({ color: 0x6fd3ff })));
+  iceLed.position.set(ICE_MX + 0.3, 1.25, Z0 + 0.79); scene.add(iceLed);
+  const iceDoor = new THREE.Group(); iceDoor.position.set(ICE_MX, 0.88, Z0 + 0.8); scene.add(iceDoor);
+  box(0.62, 0.3, 0.03, mats.darkSteel, 0, -0.15, 0, iceDoor).rotation.x = 0;
+  box(0.3, 0.04, 0.04, mats.steel, 0, -0.04, 0.03, iceDoor);
+  iceDoor.rotation.x = -0.18;
+  // steel shelving along the west wall: cup boxes, syrups, flour sacks on the bottom
+  const shelfX = X0 + 0.32;
+  [-4.35, -2.55].forEach(z => box(0.04, 1.9, 0.04, mats.steel, shelfX + 0.22, 0.95, z));
+  [-4.35, -2.55].forEach(z => box(0.04, 1.9, 0.04, mats.steel, shelfX - 0.2, 0.95, z));
+  [0.15, 0.75, 1.35, 1.88].forEach(y => box(0.46, 0.04, 1.85, mats.steel, shelfX, y, -3.45));
+  for (let k = 0; k < 4; k++) {
+    box(0.36, 0.3, 0.36, mats.kraft, shelfX, 0.92, -4.1 + k * 0.42);
+    box(0.36, 0.3, 0.36, k % 2 ? mats.kraft : CM(0xf3ece0), shelfX, 1.52, -4.1 + k * 0.42);
+    cyl(0.05, 0.05, 0.26, CM([0xc98b3b, 0x32b08c, 0xff6f59, 0x8a4f2a][k]), shelfX - 0.06, 2.03, -4.1 + k * 0.42, scene, 10);
+  }
+  for (let k = 0; k < 3; k++) { const fs = box(0.4, 0.26, 0.5, CM(0xf6efe2), shelfX + 0.02, 0.3, -4.05 + k * 0.6); fs.rotation.y = R(-0.1, 0.1); }
+  // milk crates and a hand truck by the door
+  for (let k = 0; k < 2; k++) box(0.42, 0.3, 0.42, CM(0x4a8fd6), -14.65, 0.15 + k * 0.31, -3.1);
+  plaque('STOCK ROOM', '#f4ead8', '#3a2618', 1.0, 0.25, STORE_X + 0.08, 0.95, -3.6, Math.PI / 2);
+
+  /* ---------- bakery kitchen: deck oven, cooling rack, work table ---------- */
+  const OVEN_X = -13.55, OVEN_Z = -3.0;
+  [[-0.38, -0.65], [0.38, -0.65], [-0.38, 0.65], [0.38, 0.65]].forEach(([dx, dz]) => box(0.06, 0.45, 0.06, mats.black, OVEN_X + dx, 0.225, OVEN_Z + dz));
+  box(0.86, 0.04, 1.4, mats.darkSteel, OVEN_X, 0.12, OVEN_Z);
+  box(0.92, 1.45, 1.52, mats.darkSteel, OVEN_X, 1.17, OVEN_Z);
+  box(0.92, 0.22, 1.56, mats.black, OVEN_X, 2.0, OVEN_Z);
+  cyl(0.09, 0.09, 1.9, mats.steel, OVEN_X - 0.2, 3.05, OVEN_Z - 0.4, scene, 12);
+  const ovenGlowMat = noOutline(new THREE.MeshBasicMaterial({ color: 0x4a2a1a }));
+  const ovenDoors = [0.82, 1.5].map(y => {
+    const pivot = new THREE.Group(); pivot.position.set(OVEN_X + 0.47, y - 0.24, OVEN_Z); scene.add(pivot);
+    box(0.04, 0.5, 1.3, mats.steel, 0.02, 0.25, 0, pivot);
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.22), ovenGlowMat); win.rotation.y = Math.PI / 2; win.position.set(0.045, 0.27, 0); pivot.add(win);
+    const handle = cyl(0.018, 0.018, 1.0, mats.black, 0.08, 0.46, 0, pivot, 8); handle.rotation.x = Math.PI / 2;
+    return pivot;
+  });
+  [0.3, 0.55].forEach((z, i) => { const knob = cyl(0.035, 0.035, 0.04, CM(i ? 0xffc23a : 0xff6f59), OVEN_X + 0.48, 1.96, OVEN_Z + z, scene, 10); knob.rotation.z = Math.PI / 2; });
+  const oven = { state: 'idle', t: 0, open: 0, want: 0, glow: 0 };
+  // speed rack: shows a batch of fresh bread while it cools
+  const RACK_X = -13.55, RACK_Z = -1.6;
+  [[-0.24, -0.2], [0.24, -0.2], [-0.24, 0.2], [0.24, 0.2]].forEach(([dx, dz]) => box(0.03, 1.6, 0.03, mats.steel, RACK_X + dx, 0.8, RACK_Z + dz));
+  const rackBread = [];
+  [0.35, 0.65, 0.95, 1.25].forEach((y, i) => {
+    box(0.5, 0.02, 0.42, mats.steel, RACK_X, y, RACK_Z);
+    if (i < 3) { const t = bakeTray(BREADS[[0, 2, 3][i]], 6); t.position.set(RACK_X, y + 0.01, RACK_Z); t.rotation.y = Math.PI / 2; t.visible = false; scene.add(t); rackBread.push(t); }
+  });
+  // stainless work table with a dough ball, rolling pin, flour and a stand mixer
+  const WT_X = -12.0, WT_Z = -0.9;
+  box(1.6, 0.05, 0.8, mats.steel, WT_X, 0.9, WT_Z);
+  [[-0.75, -0.35], [0.75, -0.35], [-0.75, 0.35], [0.75, 0.35]].forEach(([dx, dz]) => box(0.05, 0.88, 0.05, mats.steel, WT_X + dx, 0.44, WT_Z + dz));
+  box(1.5, 0.03, 0.7, mats.steel, WT_X, 0.2, WT_Z);
+  for (let k = 0; k < 2; k++) box(0.45, 0.3, 0.55, CM(0xf6efe2), WT_X - 0.4 + k * 0.6, 0.37, WT_Z);
+  const flourPatch = new THREE.Mesh(new THREE.CircleGeometry(0.32, 20), mats.flour); flourPatch.rotation.x = -Math.PI / 2; flourPatch.position.set(WT_X + 0.15, 0.927, WT_Z + 0.05); scene.add(flourPatch);
+  const dough = ball(0.13, mats.dough, WT_X + 0.15, 1.0, WT_Z + 0.05, scene, 12); dough.scale.y = 0.65;
+  const pin = cyl(0.03, 0.03, 0.42, mats.oak, WT_X + 0.55, 0.955, WT_Z - 0.15, scene, 10); pin.rotation.z = Math.PI / 2;
+  cyl(0.13, 0.1, 0.18, mats.steel, WT_X - 0.55, 1.02, WT_Z - 0.1, scene, 16);
+  box(0.16, 0.36, 0.26, CM(0xff6f59), WT_X - 0.72, 1.1, WT_Z - 0.1);
+  box(0.3, 0.12, 0.2, CM(0xff6f59), WT_X - 0.6, 1.33, WT_Z - 0.1);
+  // hanging BAKERY sign over the kitchen
+  [-0.55, 0.55].forEach(dx => cyl(0.008, 0.008, 0.6, mats.black, -12.0 + dx, 3.75, -2.5, scene, 6));
+  plaque('BAKERY', '#ffc23a', '#3a2618', 1.4, 0.36, -12.0, 3.32, -2.48, 0);
+  makePendant(WT_X, WT_Z, 4.25, 1.5);
+
+  /* ---------- roastery: drum roaster, cooling tray, chaff collector, green-bean sacks, bagging table ---------- */
+  const RO_X = -15.2, RO_Z = 3.0;
+  box(1.3, 0.75, 0.95, mats.black, RO_X, 0.375, RO_Z);
+  const drum = cyl(0.42, 0.42, 1.0, mats.roaster, RO_X, 1.17, RO_Z, scene, 28); drum.rotation.x = Math.PI / 2;
+  const face = cyl(0.45, 0.45, 0.05, mats.brass, RO_X, 1.17, RO_Z + 0.52, scene, 28); face.rotation.x = Math.PI / 2;
+  const roastGlowMat = noOutline(new THREE.MeshBasicMaterial({ color: 0x3a2418 }));
+  const roastWin = new THREE.Mesh(new THREE.CircleGeometry(0.17, 24), roastGlowMat); roastWin.position.set(RO_X, 1.2, RO_Z + 0.55); scene.add(roastWin);
+  const paddle = new THREE.Group(); paddle.position.set(RO_X, 1.2, RO_Z + 0.556); scene.add(paddle);
+  [0, Math.PI / 2].forEach(a => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.005), noOutline(M(0x2a1a10))); b.rotation.z = a; paddle.add(b); });
+  const hopper = cyl(0.32, 0.09, 0.46, mats.steel, RO_X, 1.85, RO_Z - 0.1, scene, 20);
+  const hopperGeo = new THREE.CylinderGeometry(0.28, 0.08, 0.38, 20); hopperGeo.translate(0, 0.19, 0);
+  const hopperBeans = new THREE.Mesh(hopperGeo, mats.greenBeans); hopperBeans.position.set(RO_X, 1.66, RO_Z - 0.1); hopperBeans.scale.y = 0.001; scene.add(hopperBeans);
+  cyl(0.12, 0.12, 0.08, mats.steel, RO_X, 1.6, RO_Z - 0.1, scene, 14);
+  // chimney straight up past the wall caps, so the roast smoke shows
+  cyl(0.1, 0.1, 3.0, mats.steel, RO_X + 0.35, 3.0, RO_Z - 0.35, scene, 14);
+  cyl(0.24, 0.12, 0.16, mats.black, RO_X + 0.35, 4.55, RO_Z - 0.35, scene, 14);
+  const chimneyTop = v3(RO_X + 0.35, RO_Z - 0.35, 4.75);
+  // control panel on the operator's side
+  box(0.06, 0.55, 0.5, mats.darkSteel, RO_X + 0.68, 1.1, RO_Z + 0.05);
+  const roastLamps = [0x32b08c, 0xffc23a, 0xff6f59].map((c, i) => {
+    const m = noOutline(new THREE.MeshBasicMaterial({ color: 0x333333 }));
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), m); l.position.set(RO_X + 0.72, 1.28, RO_Z - 0.12 + i * 0.13); scene.add(l);
+    return { m, on: new THREE.Color(c), off: new THREE.Color(0x3a3330) };
+  });
+  const dial = cyl(0.08, 0.08, 0.02, CM(0xfffaf0), RO_X + 0.72, 1.02, RO_Z + 0.08, scene, 18); dial.rotation.z = Math.PI / 2;
+  const needle = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.07, 0.012), noOutline(M(0xff3b2f)));
+  const needlePivot = new THREE.Group(); needlePivot.position.set(RO_X + 0.735, 1.02, RO_Z + 0.08); needlePivot.rotation.y = Math.PI / 2; scene.add(needlePivot);
+  needle.position.y = 0.03; needlePivot.add(needle);
+  // cooling tray with a stirring arm, fed by a chute from the drum
+  const CT_X = RO_X, CT_Z = RO_Z + 1.3;
+  [0, 2.1, 4.2].forEach(a => box(0.05, 0.62, 0.05, mats.black, CT_X + Math.cos(a) * 0.45, 0.31, CT_Z + Math.sin(a) * 0.45));
+  cyl(0.6, 0.56, 0.14, mats.steel, CT_X, 0.69, CT_Z, scene, 30);
+  const trayBeans = cyl(0.54, 0.54, 0.03, mats.roasted, CT_X, 0.77, CT_Z, scene, 30); trayBeans.visible = false;
+  const stirrer = new THREE.Group(); stirrer.position.set(CT_X, 0.8, CT_Z); scene.add(stirrer);
+  [0, Math.PI / 2].forEach(a => { const b = box(1.0, 0.03, 0.04, mats.darkSteel, 0, 0, 0, stirrer); b.rotation.y = a; });
+  cyl(0.05, 0.05, 0.2, mats.darkSteel, 0, 0.08, 0, stirrer, 10);
+  const chute = box(0.2, 0.05, 0.42, mats.steel, RO_X, 0.93, RO_Z + 0.68); chute.rotation.x = 0.45;
+  // chaff collector (cyclone) beside the drum
+  const CH_X = RO_X - 1.35, CH_Z = RO_Z - 0.2;
+  [[-0.15, -0.15], [0.15, -0.15], [-0.15, 0.15], [0.15, 0.15]].forEach(([dx, dz]) => box(0.04, 0.85, 0.04, mats.black, CH_X + dx, 0.425, CH_Z + dz));
+  cyl(0.24, 0.24, 0.7, mats.copper, CH_X, 1.35, CH_Z, scene, 20);
+  cyl(0.24, 0.07, 0.36, mats.copper, CH_X, 0.82, CH_Z, scene, 20);
+  const link = cyl(0.07, 0.07, 0.75, mats.steel, CH_X + 0.55, 1.55, CH_Z, scene, 10); link.rotation.z = Math.PI / 2;
+  // green-bean sacks on a pallet behind the roaster
+  const PAL_X = -16.3, PAL_Z = -0.55;
+  box(1.2, 0.12, 1.0, mats.pallet, PAL_X, 0.06, PAL_Z);
+  const sacks = [];
+  for (let k = 0; k < 6; k++) {
+    const sk = beanSack(); sk.position.set(PAL_X - 0.3 + (k % 2) * 0.62, 0.12 + Math.floor(k / 4) * 0.27, PAL_Z - 0.28 + (Math.floor(k / 2) % 2) * 0.4);
+    sk.rotation.y = R(-0.2, 0.2) + (k % 2 ? 0 : Math.PI); scene.add(sk); sacks.push(sk);
+  }
+  // more sacks stacked around the roaster: under the retail shelves, by the drum, and beside the bagging table
+  sackStack(X0 + 0.45, 4.9, [3, 2, 1], Math.PI / 2);
+  sackStack(-16.75, 5.95, [2, 1], 0.15);
+  sackStack(-13.75, 6.35, [2, 1], -0.1);
+  // bagging table with a scale and fresh bags, retail shelves on the west wall
+  const BAG_X = -12.5, BAG_Z = 5.8;
+  box(1.4, 0.05, 0.75, mats.oak, BAG_X, 0.8, BAG_Z);
+  [[-0.65, -0.32], [0.65, -0.32], [-0.65, 0.32], [0.65, 0.32]].forEach(([dx, dz]) => box(0.05, 0.78, 0.05, mats.walnut, BAG_X + dx, 0.39, BAG_Z + dz));
+  box(0.3, 0.06, 0.26, mats.steel, BAG_X - 0.35, 0.855, BAG_Z);
+  cyl(0.12, 0.12, 0.02, mats.steel, BAG_X - 0.35, 0.9, BAG_Z, scene, 16);
+  const tableBags = [];
+  for (let k = 0; k < 6; k++) { const b = beanBag(); b.position.set(BAG_X + 0.05 + (k % 3) * 0.2, 0.825, BAG_Z - 0.12 + Math.floor(k / 3) * 0.22); b.visible = k < 2; scene.add(b); tableBags.push(b); }
+  const bagColors = [0xe0ad6c, 0x32b08c, 0xc98b3b, 0xff6f59, 0xffc23a];
+  box(0.34, 0.06, 2.6, mats.walnut, X0 + 0.18, 1.75, 5.4);
+  box(0.34, 0.06, 2.6, mats.walnut, X0 + 0.18, 2.45, 5.4);
+  for (let i = 0; i < 7; i++) box(0.16, 0.26, 0.13, CM(bagColors[i % 5]), X0 + 0.2, 1.91, 4.3 + i * 0.36);
+  for (let i = 0; i < 5; i++) {
+    cyl(0.07, 0.07, 0.2, mats.glass, X0 + 0.2, 2.58, 4.4 + i * 0.5, scene, 14);
+    cyl(0.06, 0.06, 0.12, mats.beans, X0 + 0.2, 2.54, 4.4 + i * 0.5, scene, 14);
+    cyl(0.075, 0.075, 0.04, mats.black, X0 + 0.2, 2.7, 4.4 + i * 0.5, scene, 14);
+  }
+  box(0.05, 1.2, 1.0, mats.wallCap, X0 + 0.03, 2.4, 1.3);
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.05), mats.art);
+  art.rotation.y = Math.PI / 2; art.position.set(X0 + 0.06, 2.4, 1.3); scene.add(art);
+  plaque('ROASTERY', '#26332d', '#ffd682', 1.9, 0.48, X0 + 0.06, 3.3, 5.4, Math.PI / 2);
+  makePendant(-13.0, 4.2, 4.25, 1.3);
 
   /* ---------- the yard: path, trees, bushes, lamp, bench, A-frame sign ---------- */
   const ENTRY = v3(8.6, 6.4), STREET = v3(8.6, 12.6);
@@ -758,16 +1287,17 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     ball(0.6, mats.leaf2, -0.5, 1.75, -0.15, g, 10);
     ball(0.5, mats.leaf, 0.1, 2.75, 0.1, g, 10);
   }
-  [[-11.0, -7.4, 1.15], [13.0, -6.6, 1.0], [-10.6, 11.6, 0.95], [13.0, 11.8, 1.05], [12.9, 1.4, 0.85]].forEach(([x, z, s]) => makeTree(x, z, s));
+  [[-19.0, -7.4, 1.15], [13.0, -6.6, 1.0], [-18.6, 11.6, 0.95], [-10.4, 11.9, 0.9], [13.0, 11.8, 1.05], [12.9, 1.4, 0.85]].forEach(([x, z, s]) => makeTree(x, z, s));
   const flowerCols = [0xff6f9a, 0xffd23f, 0xffffff, 0xff8a5c];
   function bush(x, z, s) {
     const g = new THREE.Group(); g.position.set(x, -0.08, z); g.scale.setScalar(s); scene.add(g);
     ball(0.42, mats.grassDark, 0, 0.3, 0, g, 10); ball(0.32, mats.leaf2, 0.35, 0.22, 0.1, g, 10); ball(0.3, mats.leaf, -0.32, 0.2, 0.05, g, 10);
     for (let i = 0; i < 4; i++) ball(0.06, CM(pick(flowerCols), 'thin'), R(-0.45, 0.45), R(0.35, 0.62), R(0.1, 0.38), g, 6);
   }
-  [[-9, 12.9, 1], [-6.5, 12.9, 0.85], [-4, 12.9, 1], [-1.5, 12.9, 0.8], [1, 12.9, 0.95], [3.5, 12.9, 0.85], [6, 12.9, 0.9],
+  [[-16.5, 12.9, 0.9], [-14, 12.9, 0.85], [-12, 12.9, 0.95],
+   [-9, 12.9, 1], [-6.5, 12.9, 0.85], [-4, 12.9, 1], [-1.5, 12.9, 0.8], [1, 12.9, 0.95], [3.5, 12.9, 0.85], [6, 12.9, 0.9],
    [13.6, -3.8, 0.9], [13.6, -1.0, 0.8], [13.6, 4.6, 0.95], [13.6, 7.8, 0.85],
-   [-11.3, -4, 0.85], [-11.3, -1, 0.9], [-11.3, 2, 0.8], [-11.3, 5, 0.9], [-11.3, 8, 0.85]].forEach(([x, z, s]) => bush(x, z, s));
+   [-19.3, -4, 0.85], [-19.3, -1, 0.9], [-19.3, 2, 0.8], [-19.3, 5, 0.9], [-19.3, 8, 0.85]].forEach(([x, z, s]) => bush(x, z, s));
   // street lamp by the path
   cyl(0.07, 0.09, 2.9, mats.black, 10.1, 1.37, 10.6);
   box(0.5, 0.06, 0.06, mats.black, 9.9, 2.82, 10.6);
@@ -832,13 +1362,31 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       const ap = CM(look.apron);
       box(0.36, 0.44, 0.03, ap, 0, 0.72, 0.19, inner);
       box(0.06, 0.3, 0.03, ap, -0.12, 1.02, 0.17, inner); box(0.06, 0.3, 0.03, ap, 0.12, 1.02, 0.17, inner);
-      cyl(0.25, 0.27, 0.12, ap, 0, 1.66, -0.01, inner, 20);                 // barista cap
-      const brim = box(0.3, 0.03, 0.18, ap, 0, 1.61, 0.22, inner); brim.rotation.x = 0.15;
+      if (look.hat === 'toque') {                                            // baker's tall white hat
+        cyl(0.27, 0.27, 0.1, CM(0xffffff), 0, 1.66, -0.01, inner, 20);
+        ball(0.3, CM(0xffffff), 0, 1.86, -0.01, inner, 12).scale.set(1, 0.7, 1);
+      } else if (look.hat === 'beanie') {                                   // roaster's knit cap
+        const b = ball(0.3, ap, 0, 1.52, -0.02, inner, 12); b.scale.set(1.02, 0.78, 1.02);
+        cyl(0.3, 0.3, 0.07, ap, 0, 1.6, -0.02, inner, 20);
+      } else {
+        cyl(0.25, 0.27, 0.12, ap, 0, 1.66, -0.01, inner, 20);               // barista cap
+        const brim = box(0.3, 0.03, 0.18, ap, 0, 1.61, 0.22, inner); brim.rotation.x = 0.15;
+      }
     }
     const cupHold = makeCup(true); cupHold.position.set(0.17, 0.74, 0.3); cupHold.visible = false; inner.add(cupHold);
+    const leftHold = new THREE.Group(); leftHold.position.set(-0.17, 0.72, 0.3); inner.add(leftHold);      // plate, bag
+    const frontHold = new THREE.Group(); frontHold.position.set(0, 0.74, 0.34); inner.add(frontHold);    // two-handed: tray, sack, bucket
     outer.scale.setScalar(PERSON_SCALE);
     scene.add(outer);
-    return { outer, inner, hipL, hipR, armL, armR, cupHold, phase: Math.random() * 6, face: 0, hop: 0 };
+    return { outer, inner, hipL, hipR, armL, armR, cupHold, leftHold, frontHold, phase: Math.random() * 6, face: 0, hop: 0 };
+  }
+  // what someone has in their hands: a cup (right), something in the left hand, or one thing held in front with both
+  function hold(e, slot, obj) {
+    if (slot === 'cup') { e.hands.cup = !!obj; return; }
+    const g = slot === 'left' ? e.p.leftHold : e.p.frontHold;
+    while (g.children.length) g.remove(g.children[0]);
+    if (obj) g.add(obj);
+    e.hands[slot] = obj || null;
   }
 
   function lerpAngle(a, b, t) {
@@ -855,12 +1403,18 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     p.hipR.rotation.x += ((s.seated ? -Math.PI / 2 : -sw) - p.hipR.rotation.x) * k;
     let aL = s.moving ? -sw * 0.8 : (s.seated ? -0.6 : 0.05 * Math.sin(elapsed * 1.6 + p.phase));
     let aR = s.moving ? sw * 0.8 : (s.seated ? -0.8 : 0.05 * Math.sin(elapsed * 1.6 + p.phase + 1));
-    if (s.carrying) aR = -1.2;
-    if (s.brewing) { aR = -1.1 + 0.22 * Math.sin(elapsed * 8); aL = -0.95 + 0.15 * Math.sin(elapsed * 6 + 1); }
-    if (p.hop > 0) { aL = -2.6; aR = s.carrying ? -1.2 : -2.6; }                 // cheer
+    let zL = 0, zR = 0;
+    if (s.cup) aR = -1.2;
+    if (s.left) aL = -1.2;
+    if (s.front) { aL = aR = -1.05; zL = 0.32; zR = -0.32; }
+    if (s.pose === 'brew') { aR = -1.1 + 0.22 * Math.sin(elapsed * 8); aL = -0.95 + 0.15 * Math.sin(elapsed * 6 + 1); }
+    else if (s.pose === 'reach') { aR = -1.35 + 0.12 * Math.sin(elapsed * 5); aL = s.cup || s.left ? aL : -1.3 + 0.1 * Math.sin(elapsed * 5 + 2); }
+    else if (s.pose === 'up') { aL = aR = -2.75 + 0.12 * Math.sin(elapsed * 7); zL = 0.2; zR = -0.2; }
+    else if (s.pose === 'knead') { aR = -0.95 + 0.3 * Math.sin(elapsed * 7); aL = -0.95 + 0.3 * Math.sin(elapsed * 7 + Math.PI); zL = 0.25; zR = -0.25; }
+    if (p.hop > 0) { aL = s.left || s.front ? aL : -2.6; aR = s.cup || s.front ? aR : -2.6; }                 // cheer
     p.armL.rotation.x += (aL - p.armL.rotation.x) * k;
     p.armR.rotation.x += (aR - p.armR.rotation.x) * k;
-    p.armL.rotation.z = p.hop > 0 ? -0.4 : 0; p.armR.rotation.z = p.hop > 0 && !s.carrying ? 0.4 : 0;
+    p.armL.rotation.z = p.hop > 0 && !s.left && !s.front ? -0.4 : zL; p.armR.rotation.z = p.hop > 0 && !s.cup && !s.front ? 0.4 : zR;
     let yT = s.seated ? -0.065 : (s.moving ? Math.abs(Math.cos(p.phase)) * 0.07 : 0.012 * Math.sin(elapsed * 2.2 + p.phase));
     let squash = 1;
     if (p.hop > 0) {
@@ -872,7 +1426,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     p.inner.position.y += (yT - p.inner.position.y) * (p.hop > 0 ? 1 : k);
     p.inner.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
     p.inner.rotation.z = s.moving ? Math.sin(p.phase) * 0.06 : 0;
-    p.cupHold.visible = !!s.carrying;
+    p.cupHold.visible = !!s.cup;
+    p.leftHold.visible = !!s.left; p.frontHold.visible = !!s.front;
     p.outer.rotation.y = lerpAngle(p.outer.rotation.y, p.face, 1 - Math.exp(-dt * 10));
   }
 
@@ -936,14 +1491,17 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
   /* ---------- steam ---------- */
   const puffs = [];
-  for (let i = 0; i < 110; i++) {
+  for (let i = 0; i < 170; i++) {
     const m = new THREE.SpriteMaterial({ map: steamTex, transparent: true, depthWrite: false, opacity: 0, color: 0xffffff });
     const s = new THREE.Sprite(m); s.visible = false; scene.add(s);
-    puffs.push({ s, life: 0, max: 1, alive: false, drift: 0, strength: 1 });
+    puffs.push({ s, life: 0, max: 1, alive: false, drift: 0, strength: 1, big: 1 });
   }
-  function emit(x, y, z, strength) {
+  // kind 'smoke' is the roaster's chimney: greyer, bigger, longer-lived
+  function emit(x, y, z, strength, kind) {
     const p = puffs.find(q => !q.alive); if (!p) return;
-    p.alive = true; p.life = 0; p.max = R(1.2, 1.9); p.drift = R(0, 6); p.strength = strength;
+    const smoke = kind === 'smoke';
+    p.alive = true; p.life = 0; p.max = smoke ? R(2.2, 3.2) : R(1.2, 1.9); p.drift = R(0, 6); p.strength = strength; p.big = smoke ? 2.6 : 1;
+    p.s.material.color.setHex(smoke ? 0xb9b2aa : 0xffffff);
     p.s.position.set(x + R(-0.02, 0.02), y, z + R(-0.02, 0.02)); p.s.visible = true;
   }
   function updatePuffs(dt) {
@@ -955,12 +1513,12 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       p.s.position.y += dt * (0.34 + 0.2 * (1 - u));
       p.s.position.x += Math.sin(elapsed * 1.7 + p.drift) * dt * 0.06;
       p.s.position.z += Math.cos(elapsed * 1.3 + p.drift) * dt * 0.04;
-      const sc = 0.1 + u * 0.3; p.s.scale.set(sc, sc, sc);
+      const sc = (0.1 + u * 0.3) * p.big; p.s.scale.set(sc, sc, sc);
       p.s.material.opacity = 0.75 * Math.sin(Math.PI * u) * p.strength;
     }
   }
   const emitters = [];
-  function makeEmitter(x, y, z) { const e = { x, y, z, rate: 0, acc: 0 }; emitters.push(e); return e; }
+  function makeEmitter(x, y, z, kind) { const e = { x, y, z, rate: 0, acc: 0, kind }; emitters.push(e); return e; }
   stations.forEach(st => {
     st.steam = st.heads.map(x => makeEmitter(x, TOP_BACK + 0.12, st.z + 0.4));
     st.heads.forEach(x => { const c = makeCup(false); c.position.set(x, TOP_BACK + 0.05, st.z + 0.36); scene.add(c); });
@@ -987,9 +1545,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   }
 
   /* ---------- simulation ---------- */
-  // customers queue in a line by the east aisle, step up to whichever till is free, and wait there for their drink
+  // customers queue in a line by the east aisle, step up to whichever till is free, and wait there for their order
   const ORDER_Z = FRONT_Z + 0.93;
-  const tills = ORDER_X.map(x => ({ pos: v3(x, ORDER_Z), hand: v3(x, LANE_Z + 0.26), cust: null }));   // hand over at the front counter's edge
   const QUEUE_X = 1.8;
   const QUEUE = Array.from({ length: 8 }, (_, i) => v3(QUEUE_X, -2.9 + i * 0.8));
   const QUEUE_IN = v3(QUEUE_X, FRONT_AISLE + 0.3);
@@ -998,37 +1555,136 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   const OUT_DOOR = v3(ENTRY.x + 0.32, ENTRY.z), OUT_STREET = v3(STREET.x + 0.32, STREET.z);
   const IN_AISLE = FRONT_AISLE + 0.3, OUT_AISLE = FRONT_AISLE - 0.3;   // arrivals and departures use opposite halves of the front aisle
 
-  const state = { hour: 7.6, playing: !reduceMotion, served: 0, revenue: 0, day: 1, spawnIn: 1.5, mode: 'hours', speed: 1 };
+  /* ---------- staff routes ----------
+     Every place a member of staff works is a spot: where to stand, which way to face, and the chain of
+     corridor points that leads to it. Back-of-house spots hang off one corridor running just inside the
+     glass partition (AISLE_X); the bar spots hang off the point where the bar lane meets that corridor.
+     A trip walks back up the chain it is on and down the other one, sharing whatever start they have in common. */
+  const AISLE_X = -10.65;
+  const A = z => v3(AISLE_X, z);
+  const L_W = A(LANE_Z), STORE_DOOR = v3(STORE_X, LANE_Z);
+  const A_RO = A(1.7), RO_HUB = v3(-13.2, 1.7);
+  const spot = (x, z, face, entry) => ({ pos: v3(x, z), face, entry });
+  const barSpot = (x, z, face) => spot(x, z, face, [L_W]);
+  const CAFE_ROUTE = [A(LANE), v3(-9.4, LANE), v3(6.0, LANE), v3(6.0, REFILL_Z)];
+  const SPOT = {
+    ice: spot(ICE_MX, LANE_Z - 0.05, Math.PI, [L_W, STORE_DOOR]),
+    fridge: spot(X0 + 1.4, -5.42, -Math.PI / 2, [L_W, STORE_DOOR]),
+    oven: spot(OVEN_X + 1.1, OVEN_Z, -Math.PI / 2, [A(OVEN_Z)]),
+    rack: spot(RACK_X + 0.55, RACK_Z - 0.15, -Math.PI / 2, [A(RACK_Z - 0.15)]),
+    knead: spot(WT_X + 0.15, WT_Z + 0.9, Math.PI, [A(WT_Z + 0.9)]),
+    pallet: spot(PAL_X + 1.0, PAL_Z, -Math.PI / 2, [A_RO, RO_HUB, v3(PAL_X + 1.0, 0.55)]),
+    hopper: spot(RO_X + 0.9, RO_Z - 0.75, -0.95, [A_RO, RO_HUB]),
+    panel: spot(RO_X + 1.25, RO_Z + 0.05, -Math.PI / 2, [A_RO, RO_HUB]),
+    tray: spot(CT_X + 0.9, CT_Z, -Math.PI / 2, [A_RO, RO_HUB]),
+    bag: spot(BAG_X, BAG_Z - 0.85, 0, [A(BAG_Z - 0.85)]),
+    showcase: barSpot(SC_CX, LANE_Z + 0.22, 0),
+    urn: barSpot(URN_SPOT_X, LANE_Z - 0.26, Math.PI),
+    iceBin: barSpot(ICE_X, LANE_Z - 0.26, Math.PI),
+  };
+  breadTables.forEach(t => { t.refill = spot(t.x, REFILL_Z, 0, CAFE_ROUTE); });
+  function route(from, to) {
+    const a = from ? from.entry : [], b = to.entry;
+    let k = 0;
+    while (k < a.length && k < b.length && a[k] === b[k]) k++;
+    return [...a.slice(k).reverse(), ...b.slice(k), to.pos].map(p => p.clone());
+  }
+
+  const tills = ORDER_X.map(x => ({ pos: v3(x, ORDER_Z), spot: barSpot(x, LANE_Z + 0.26, 0), cust: null }));   // hand over at the front counter's edge
+  const state = { hour: 7.6, playing: !reduceMotion, served: 0, baked: 0, revenue: 0, day: 1, spawnIn: 1.5, mode: 'hours', speed: 1, ice: 0.75 };
   const queue = [], customers = [], orders = [];
+
+  /* ---------- staff: a worker runs a list of jobs; each job is "walk to a spot, then do something there for a while" ---------- */
+  function makeWorker(look, at, extra) {
+    const w = Object.assign({
+      p: makePerson(look), at, pos: at.pos.clone(), path: [], jobs: [], job: null, phase: '', timer: 0,
+      hands: { cup: false, left: null, front: null }, pose: null, scale: 0, idleT: R(1, 3),
+    }, extra);
+    w.p.face = at.face; w.p.outer.rotation.y = at.face;
+    return w;
+  }
+  function runJobs(w, dt, speed) {
+    if (!w.job && w.jobs.length) { w.job = w.jobs.shift(); w.phase = 'go'; w.path = route(w.at, w.job.spot); }
+    const j = w.job;
+    w.pose = null;
+    if (!j) return false;
+    if (w.phase === 'go') {
+      const moving = walk(w, dt, speed);
+      if (!moving) { w.phase = 'act'; w.timer = j.dur; w.at = j.spot; if (j.start) j.start(w); }
+      return moving;
+    }
+    w.p.face = j.spot.face;
+    w.pose = j.pose || null;
+    w.timer -= dt;
+    if (j.tick) j.tick(w, clamp(1 - w.timer / j.dur, 0, 1));
+    if (w.timer <= 0) { w.job = null; if (j.done) j.done(w); }
+    return false;
+  }
+  const busy = w => !!w.job || w.jobs.length > 0;
 
   const STAFF = [
     { skin: 0xf2bf98, hair: 0x3a2618, shirt: 0xf3ece0, pants: 0x3a3f52, apron: 0x2f8a6f },
     { skin: 0xa8714f, hair: 0x1f1d1c, shirt: 0xf3ece0, pants: 0x46607e, apron: 0x2f8a6f },
     { skin: 0xffd9bf, hair: 0xd9604a, shirt: 0xf3ece0, pants: 0x5a4636, apron: 0x2f8a6f },
   ];
-  const baristas = stations.map((st, i) => ({
-    p: makePerson(STAFF[i]), st, pos: st.stand.clone(), path: [], state: 'idle', timer: 0, brewTotal: 2.6,
-    current: null, carrying: false, brewing: false, idleT: R(0.5, 3), scale: 1, prog: makeProgress(),
-    clampZ: [LANE_Z - 0.28, LANE_Z + 0.28]   // stay between the counters while dodging
-  }));
+  const baristas = stations.map((st, i) => {
+    st.brewSpot = barSpot(st.x, LANE_Z - 0.26, Math.PI);            // brew with your back to the lane's middle
+    st.grinderSpot = barSpot(st.x - 0.98, LANE_Z - 0.26, Math.PI);
+    return makeWorker(STAFF[i], st.brewSpot, {
+      st, current: null, prog: makeProgress(), scale: 1, iceRun: false,
+      clampZ: [LANE_Z - 0.28, LANE_Z + 0.28],   // stay between the counters while dodging
+    });
+  });
+  // the baker comes in at five to have bread out for opening; the roaster works daytime hours
+  const baker = makeWorker({ skin: 0xffd9bf, hair: 0x6b3f22, shirt: 0xffffff, pants: 0x3a3f52, apron: 0xd9a066, hat: 'toque' }, SPOT.knead, { home: SPOT.knead, shift: [5, 20.5] });
+  const roaster = makeWorker({ skin: 0xd9996e, hair: 0x1f1d1c, shirt: 0x46607e, pants: 0x5a4636, apron: 0x6b4127, hat: 'beanie' }, SPOT.panel, { home: SPOT.panel, shift: [7, 19] });
+  const staff = [...baristas, baker, roaster];
+  const onShift = (w, h) => h >= w.shift[0] && h < w.shift[1];
 
-  function spawnCustomer() {
-    const order = pickOrder();
+  /* ---------- customers ---------- */
+  const browsingNow = () => customers.filter(c => c.browse && !c.picked && c.state !== 'leaving' && c.state !== 'exit').length;
+  function planOrder(noBrowse) {
+    const canBrowse = !noBrowse && breadStock() > 0 && browsingNow() < 3;
+    const breadOnly = canBrowse && Math.random() < 0.15;
+    const wantsBread = breadOnly || (canBrowse && Math.random() < 0.42);
+    const drink = breadOnly ? null : pickWeighted(MENU);
+    let dessert = null;
+    if (drink && Math.random() < 0.3) {
+      const opts = DESSERTS.filter(f => f.avail > 0);
+      if (opts.length) { dessert = pickWeighted(opts); dessert.avail--; }   // reserve the slice now
+    }
+    return { drink, dessert, wantsBread, breads: [] };
+  }
+  function spawnCustomer(noBrowse) {
+    const order = planOrder(noBrowse);
     const c = {
       p: makePerson({ skin: pick(SKIN), hair: pick(HAIR), shirt: pick(SHIRT), pants: pick(PANTS) }),
-      pos: IN_STREET.clone(), path: [IN_DOOR.clone(), QUEUE_IN.clone()], state: 'enter', till: null, leftTill: null, ready: false, carrying: false,
-      chair: null, sitT: 0, cup: null, steam: null, scale: 0, speed: R(1.3, 1.6), seatLerp: 0, order,
-      bubble: new THREE.Sprite(spriteMat(order.tex)), bubbleK: 0, bob: Math.random() * 6
+      pos: IN_STREET.clone(), path: [IN_DOOR.clone()], state: 'enter', till: null, leftTill: null, ready: false,
+      hands: { cup: false, left: null, front: null }, chair: null, sitT: 0, sitT0: 1, cup: null, plate: null, steam: null,
+      scale: 0, speed: R(1.3, 1.6), seatLerp: 0, order, browse: null, picked: false, payT: 0, timer: 0, foods: [],
+      bubble: new THREE.Sprite(spriteMat(orderBubble(order.drink, order.dessert || (order.wantsBread ? BREADS[0] : null)))), bubbleK: 0, bob: Math.random() * 6
     };
+    if (order.wantsBread) {
+      // head for one of the bread tables first, then join the queue with a tray
+      const tables = breadTables.filter(t => t.baskets.some(b => b.count > 0));
+      const t = pick(tables.length ? tables : breadTables), side = Math.floor(Math.random() * 2);
+      c.browse = { table: t, side, at: t.browse[side] };
+      c.path.push(v3(c.browse.at.x, IN_AISLE), c.browse.at.clone());
+    } else {
+      c.path.push(QUEUE_IN.clone());
+      queue.push(c);
+    }
     c.bubble.renderOrder = 18; c.bubble.scale.set(0.01, 0.01, 1); scene.add(c.bubble);
     c.p.outer.scale.setScalar(0.001);
-    customers.push(c); queue.push(c);
+    customers.push(c);
+    return c;
   }
 
   function removeCustomer(c) {
     scene.remove(c.p.outer);
     scene.remove(c.bubble); c.bubble.material.dispose();
     if (c.cup) scene.remove(c.cup);
+    if (c.plate) scene.remove(c.plate);
     if (c.steam) emitters.splice(emitters.indexOf(c.steam), 1);
     customers.splice(customers.indexOf(c), 1);
     const qi = queue.indexOf(c); if (qi >= 0) queue.splice(qi, 1);
@@ -1043,11 +1699,32 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   }
   const inHours = h => h >= 7 && h < 21;
   const isOpen = h => state.mode === 'hours' ? inHours(h) : state.mode === 'open';
-  const shopBusy = () => customers.length > 0 || orders.length > 0 || baristas.some(b => b.state !== 'idle');
+  const shopBusy = () => customers.length > 0 || orders.length > 0 || baristas.some(busy);
   function lightsOn(h) {
     if (state.mode === 'open') return true;
     if (state.mode === 'closed') return shopBusy();
     return (h >= 6.5 && h < 21.6) || shopBusy();
+  }
+
+  // pay: drink + plated cake + whatever bread is on the tray
+  function settle(c) {
+    const o = c.order;
+    const total = (o.drink ? o.drink.price : 0) + (o.dessert ? o.dessert.price : 0) + o.breads.reduce((s, b) => s + b.price, 0);
+    c.ready = true; state.revenue += total;
+    if (o.drink) state.served++;
+    state.baked += (o.dessert ? 1 : 0) + o.breads.length;
+    popup(coinTextTex('+₩' + total.toLocaleString('en-US')), tmpV.set(c.till.pos.x, 2.7, FRONT_Z), 2.3, 0.69, 1.0, 1.5);
+  }
+
+  // take one or two breads from the two baskets in front of where the customer stands
+  function pickBread(c) {
+    const t = c.browse.table, mine = t.baskets.slice(c.browse.side * 2, c.browse.side * 2 + 2);
+    const want = Math.random() < 0.65 ? 1 : 2;
+    for (let n = 0; n < want; n++) {
+      const pool = mine.filter(b => b.count > 0).length ? mine.filter(b => b.count > 0) : t.baskets.filter(b => b.count > 0);
+      if (!pool.length) break;
+      const b = pick(pool); b.count--; syncBasket(b); c.order.breads.push(b.type);
+    }
   }
 
   const tmpV = new THREE.Vector3();
@@ -1055,8 +1732,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     if (isOpen(state.hour)) {
       state.spawnIn -= dt;
       if (state.spawnIn <= 0) {
-        if (queue.length < QUEUE.length && customers.length < 32) spawnCustomer();
-        state.spawnIn = R(0.6, 1.4) * 3.4 / busyness(state.hour);   // about 2.5× the small shop's footfall
+        if (queue.length + browsingNow() < QUEUE.length && customers.length < 38) spawnCustomer();
+        state.spawnIn = R(0.6, 1.4) * 2.8 / busyness(state.hour);   // about 3× the small shop's footfall, now there's a bakery too
       }
     }
     for (const c of customers.slice()) {
@@ -1067,7 +1744,26 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       let moving = false;
       if (c.state === 'enter') {
         moving = walk(c, dt, c.speed);
-        if (!moving) c.state = 'queue';
+        if (!moving) {
+          if (c.browse && !c.picked) { c.state = 'browse'; c.timer = R(1.8, 2.8); }
+          else c.state = 'queue';
+        }
+      } else if (c.state === 'browse') {
+        c.p.face = Math.PI;
+        c.timer -= dt;
+        if (c.timer <= 0) {
+          pickBread(c); c.picked = true;
+          const at = c.browse.at;
+          if (!c.order.breads.length && !c.order.drink) {
+            c.path = [v3(at.x, OUT_AISLE), OUT_DOOR.clone(), OUT_STREET.clone()]; c.state = 'leaving';   // shelves were empty
+          } else {
+            if (c.order.breads.length) hold(c, 'front', trayOf(c.order.breads));
+            c.path = [v3(at.x, IN_AISLE), QUEUE_IN.clone()]; c.state = 'toQueue';
+          }
+        }
+      } else if (c.state === 'toQueue') {
+        moving = walk(c, dt, c.speed);
+        if (!moving) { queue.push(c); c.state = 'queue'; }
       } else if (c.state === 'queue') {
         const i = queue.indexOf(c);
         const spot = QUEUE[Math.min(i, QUEUE.length - 1)];
@@ -1084,17 +1780,26 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         }
       } else if (c.state === 'toTill') {
         moving = walk(c, dt, c.speed);
-        if (!moving) { c.p.face = Math.PI; c.state = 'waiting'; orders.push(c); }
+        if (!moving) {
+          c.p.face = Math.PI; c.state = 'waiting';
+          if (c.order.drink || c.order.dessert) orders.push(c);
+          else c.payT = 1.4;                                   // bread only: just pay at the till
+        }
       } else if (c.state === 'waiting') {
         c.p.face = Math.PI;
+        if (!c.ready && !c.order.drink && !c.order.dessert) { c.payT -= dt; if (c.payT <= 0) settle(c); }
         if (c.ready) {
           c.leftTill = c.till; c.till = null;   // the till stays taken until they've stepped away
-          c.carrying = true;
+          c.foods = [...(c.order.dessert ? [c.order.dessert] : []), ...c.order.breads];
+          const free = chairs.filter(ch => !ch.taken);
+          const sit = free.length && Math.random() < (c.foods.length ? 0.82 : 0.75);
+          hold(c, 'front', null);
+          hold(c, 'cup', !!c.order.drink);
+          hold(c, 'left', c.foods.length ? (sit ? plateWith(c.foods) : paperBag()) : null);
           c.p.hop = 1;
           popup(heartTex, tmpV.set(c.pos.x, 2.75, c.pos.z), 0.7, 0.7, 0.9, 1.1);
-          const free = chairs.filter(ch => !ch.taken);
           const toLane = v3(c.pos.x, LANE);
-          if (free.length && Math.random() < 0.75) {
+          if (sit) {
             c.chair = pick(free); c.chair.taken = c;
             c.path = [toLane, v3(c.chair.aisle, LANE), c.chair.approach.clone()];
             c.state = 'toSeat';
@@ -1109,27 +1814,40 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         if (c.waitHop > 0) c.waitHop -= dt;
         else {
           moving = walk(c, dt, c.speed);
-          if (!moving) { c.state = 'sitting'; c.seatLerp = 0; c.sitT = R(16, 30); c.from = c.pos.clone(); }
+          if (!moving) { c.state = 'sitting'; c.seatLerp = 0; c.sitT = c.sitT0 = R(16, 30); c.from = c.pos.clone(); }
         }
       } else if (c.state === 'sitting') {
         if (c.seatLerp < 1) {
           c.seatLerp = Math.min(1, c.seatLerp + dt / 0.45);
           c.pos.lerpVectors(c.from, c.chair.pos, c.seatLerp);
           c.p.face = c.chair.face;
-          if (c.seatLerp >= 1 && !c.cup) {
-            c.carrying = false;
+          if (c.seatLerp >= 1 && !c.cup && !c.plate) {
             const t = c.chair.table;
-            const cx = t.x + (c.chair.pos.x - t.x) * 0.42, cz = t.z + (c.chair.pos.z - t.z) * 0.42;
-            c.cup = makeCup(true); c.cup.position.set(cx, 0.815, cz); scene.add(c.cup);
-            c.steam = makeEmitter(cx, 0.97, cz); c.steam.rate = 1.3;
+            const cx = t.x + (c.chair.pos.x - t.x) * 0.42;
+            const both = c.order.drink && c.foods.length;
+            if (c.order.drink) {
+              const cz = t.z + (both ? -0.14 : 0);
+              c.cup = makeCup(true); c.cup.position.set(cx, 0.815, cz); scene.add(c.cup);
+              c.steam = makeEmitter(cx, 0.97, cz); c.steam.rate = 1.3;
+            }
+            if (c.foods.length) {
+              c.plate = plateWith(c.foods); c.plate.position.set(cx, 0.815, t.z + (both ? 0.15 : 0)); scene.add(c.plate);
+              c.plate.children.forEach(o => { o.userData.s = o.scale.x; });
+            }
+            hold(c, 'cup', false); hold(c, 'left', null);
           }
         } else {
           c.sitT -= dt;
           if (c.steam) c.steam.rate = Math.max(0.2, c.steam.rate - dt * 0.06);
+          if (c.plate) {                                         // nibble away at the plate
+            const k = Math.max(0.12, c.sitT / c.sitT0 * 1.1);
+            c.plate.children.forEach((o, i) => { if (i) o.scale.setScalar(o.userData.s * Math.min(1, k)); });
+          }
           if (c.sitT <= 0) {
             if (c.cup) { scene.remove(c.cup); c.cup = null; }
+            if (c.plate) { scene.remove(c.plate); c.plate = null; }
             if (c.steam) { emitters.splice(emitters.indexOf(c.steam), 1); c.steam = null; }
-            c.carrying = true;
+            hold(c, 'cup', !!c.order.drink);
             c.chair.taken = false;
             c.path = [c.chair.approach.clone(), v3(c.chair.aisle, OUT_AISLE), OUT_DOOR.clone(), OUT_STREET.clone()];
             c.state = 'leaving';
@@ -1146,10 +1864,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       const seated = c.state === 'sitting' && c.seatLerp >= 0.6;
       c.p.outer.position.set(c.pos.x, 0, c.pos.z);
       c.p.outer.scale.setScalar(Math.max(0.001, c.scale) * PERSON_SCALE);
-      animatePerson(c.p, { moving: moving && c.stepping !== false, seated, carrying: c.carrying && !seated }, dt);
+      animatePerson(c.p, {
+        moving: moving && c.stepping !== false, seated,
+        cup: c.hands.cup && !seated, left: c.hands.left && !seated, front: c.hands.front && !seated,
+        pose: c.state === 'browse' ? 'reach' : null,
+      }, dt);
 
-      // order bubble: shown from the door until the drink arrives
-      const want = (c.state === 'enter' || c.state === 'queue' || c.state === 'toTill' || c.state === 'waiting') && !c.ready ? 1 : 0;
+      // order bubble: shown from the door until the order arrives
+      const want = (c.state === 'enter' || c.state === 'browse' || c.state === 'toQueue' || c.state === 'queue' || c.state === 'toTill' || c.state === 'waiting') && !c.ready ? 1 : 0;
       c.bubbleK += (want - c.bubbleK) * (1 - Math.exp(-dt * (want ? 9 : 14)));
       const pop = c.bubbleK * (1 + 0.12 * Math.max(0, Math.sin(Math.min(1, c.bubbleK) * Math.PI)));
       c.bubble.scale.set(0.95 * pop + 0.001, 1.1 * pop + 0.001, 1);
@@ -1158,69 +1880,237 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     }
   }
 
-  function updateBaristas(dt) {
-    // hand each waiting order to the idle barista whose station is nearest that customer's till
+  /* ---------- baristas: drinks, plated cakes, and fetching ice from the stock room ---------- */
+  function showcaseSpot(f) {
+    const m = f.slots[Math.max(0, f.shown - 1)];
+    return barSpot(m.position.x, LANE_Z + 0.22, 0);
+  }
+  function takeSlice(f) { if (f.shown > 0) { f.shown--; f.slots[f.shown].visible = false; } }
+  DESSERTS.forEach(f => { f.shown = 4; });
+  function planDrinks(b, c) {
+    const d = c.order.drink, f = c.order.dessert;
+    b.current = c;
+    if (d) {
+      b.jobs.push({
+        spot: d.coldBrew ? SPOT.urn : b.st.brewSpot, dur: d.coldBrew ? 1.5 : 2.6, pose: 'brew', brew: !d.coldBrew,
+        tick: (w, u) => w.prog.draw(u, d),
+        done: w => { hold(w, 'cup', true); if (!d.coldBrew) w.st.beans = Math.max(0, w.st.beans - 0.07); },
+      });
+      if (d.kind === 'iced') b.jobs.push({ spot: SPOT.iceBin, dur: 0.6, pose: 'reach', done: () => { state.ice = Math.max(0, state.ice - 0.07); } });
+    }
+    if (f) b.jobs.push({ spot: showcaseSpot(f), dur: 0.8, pose: 'reach', done: w => { takeSlice(f); hold(w, 'left', plateWith([f])); } });
+    b.jobs.push({ spot: c.till.spot, dur: 0.5, done: w => handoff(w, c) });
+  }
+  function handoff(w, c) {
+    hold(w, 'cup', false); hold(w, 'left', null);
+    if (c && customers.includes(c) && c.till) { settle(c); w.p.hop = 0.8; }
+    w.current = null; w.idleT = R(1, 3);
+  }
+  const iceMachine = { open: 0, want: 0 };
+  function planIceRun() {
+    if (state.ice > 0.35 || baristas.some(b => b.iceRun)) return;
+    const idle = baristas.filter(b => !busy(b) && b.scale > 0.5);
+    if (!idle.length) return;
+    idle.sort((a, b) => a.pos.x - b.pos.x);                 // the one nearest the stock room goes
+    const b = idle[0]; b.iceRun = true;
+    b.jobs.push(
+      { spot: SPOT.ice, dur: 1.6, pose: 'reach', start: () => { iceMachine.want = 1; }, done: w => { iceMachine.want = 0; hold(w, 'front', iceBucket()); } },
+      { spot: SPOT.iceBin, dur: 0.8, pose: 'reach', done: w => { hold(w, 'front', null); state.ice = 1; w.iceRun = false; } },
+    );
+  }
+  function assignOrders() {
     while (orders.length) {
-      const idle = baristas.filter(b => b.state === 'idle');
+      const idle = baristas.filter(b => !busy(b) && b.scale > 0.5);
       if (!idle.length) break;
       const c = orders.shift();
       if (!customers.includes(c) || !c.till) continue;
-      idle.sort((a, b) => Math.abs(a.st.x - c.pos.x) - Math.abs(b.st.x - c.pos.x));
-      const b = idle[0];
-      b.current = c; b.path = [b.st.stand.clone()]; b.state = 'toMachine';
+      const cold = c.order.drink && c.order.drink.coldBrew;
+      // the idle barista whose station is nearest that customer's till (or nearest the cold-brew dispensers)
+      const key = b => cold ? Math.abs(b.pos.x - URN_SPOT_X) : Math.abs(b.st.x - c.pos.x);
+      idle.sort((a, b) => key(a) - key(b));
+      planDrinks(idle[0], c);
     }
+  }
+
+  function updateBaristas(dt) {
+    if (state.ice < 0.2) planIceRun();                       // nearly out: ice before the next order
+    assignOrders();
+    planIceRun();
     const open = isOpen(state.hour), on = lightsOn(state.hour);
     for (const b of baristas) {
       b.scale += ((on ? 1 : 0) - b.scale) * (1 - Math.exp(-dt * 6));
-      let moving = false;
-      b.brewing = false;
-      if (b.state === 'idle') {
+      let moving = runJobs(b, dt, 1.9);
+      if (!busy(b)) {
         // an idle barista steps back against the back counter to let a busy colleague past
-        const passing = baristas.some(o => o !== b && o.walking && Math.abs(o.pos.x - b.pos.x) < 1.6);
-        const spot = v3(b.pos.x, LANE_Z - 0.28);
-        if (passing && !b.path.length && b.pos.z > LANE_Z - 0.2 && !baristas.some(o => o !== b && o.pos.distanceTo(spot) < 0.6)) b.path = [spot];
+        const passing = staff.some(o => o !== b && o.walking && Math.abs(o.pos.x - b.pos.x) < 1.6 && Math.abs(o.pos.z - LANE_Z) < 0.6);
+        const spotBack = v3(b.pos.x, LANE_Z - 0.28);
+        if (passing && !b.path.length && b.pos.z > LANE_Z - 0.2 && !baristas.some(o => o !== b && o.pos.distanceTo(spotBack) < 0.6)) b.path = [spotBack];
         b.idleT -= dt;
         if (b.idleT <= 0) { b.idleT = R(3, 7); b.path = [v3(b.st.x + R(-0.9, 0.9), LANE_Z - 0.26)]; }
         moving = walk(b, dt, 0.9);
         if (!moving) b.p.face = 0;
-      } else if (b.state === 'toMachine') {
-        moving = walk(b, dt, 1.9);
-        if (!moving) { b.state = 'brew'; b.timer = b.brewTotal; b.p.face = Math.PI; }
-      } else if (b.state === 'brew') {
-        b.brewing = true; b.timer -= dt;
-        if (b.current) b.prog.draw(1 - b.timer / b.brewTotal, b.current.order);
-        if (b.timer <= 0) {
-          b.carrying = true; b.state = 'toTill';
-          b.path = [b.current && b.current.till ? b.current.till.hand.clone() : b.st.stand.clone()];
-        }
-      } else if (b.state === 'toTill') {
-        moving = walk(b, dt, 1.9);
-        if (!moving) { b.state = 'handoff'; b.timer = 0.5; b.p.face = 0; }
-      } else if (b.state === 'handoff') {
-        b.timer -= dt;
-        if (b.timer <= 0) {
-          b.carrying = false;
-          const c = b.current;
-          if (c && customers.includes(c) && c.till) {
-            c.ready = true; state.served++; state.revenue += c.order.price;
-            popup(coinTextTex('+₩' + c.order.price.toLocaleString('en-US')), tmpV.set(c.till.pos.x, 2.7, FRONT_Z), 2.3, 0.69, 1.0, 1.5);
-            b.p.hop = 0.8;
-          }
-          b.current = null; b.state = 'idle'; b.idleT = R(1, 3);
-        }
       }
+      const brewing = !!(b.job && b.phase === 'act' && b.job.pose === 'brew');
+      const atMachine = brewing && b.job.brew;
       b.p.outer.position.set(b.pos.x, 0, b.pos.z);
       b.p.outer.scale.setScalar(Math.max(0.001, b.scale) * PERSON_SCALE);
-      animatePerson(b.p, { moving: moving && b.stepping !== false, carrying: b.carrying, brewing: b.brewing }, dt);
-      b.st.steam.forEach(e => { e.rate = b.brewing ? 9 : (open ? 0.9 : 0); });
-      b.st.lampMat.color.setHex(b.brewing ? 0xffa64d : (open ? 0x6b4a2a : 0x2a2018));
+      animatePerson(b.p, { moving: moving && b.stepping !== false, cup: b.hands.cup, left: b.hands.left, front: b.hands.front, pose: b.pose }, dt);
+      b.st.steam.forEach(e => { e.rate = atMachine ? 9 : (open ? 0.9 : 0); });
+      b.st.lampMat.color.setHex(atMachine ? 0xffa64d : (open ? 0x6b4a2a : 0x2a2018));
       // progress ring over the barista's head while a drink is being made
       const pr = b.prog;
-      pr.k += ((b.brewing ? 1 : 0) - pr.k) * (1 - Math.exp(-dt * 12));
+      pr.k += ((brewing ? 1 : 0) - pr.k) * (1 - Math.exp(-dt * 12));
       pr.sprite.visible = pr.k > 0.02;
       pr.sprite.scale.set(0.85 * pr.k + 0.001, 0.85 * pr.k + 0.001, 1);
       pr.sprite.position.set(b.pos.x, 2.75, b.pos.z);
     }
+  }
+
+  /* ---------- the baker: knead → oven → cooling rack → bread tables; restocks the cake showcase from the fridge ---------- */
+  const bakery = { rackReady: true, toastAt: -99 };
+  const showRack = on => rackBread.forEach(t => { t.visible = on; });
+  showRack(true);
+  const dessertsLeft = () => DESSERTS.reduce((s, f) => s + f.avail, 0);
+  function planBaker(w) {
+    const stock = breadStock();
+    if (bakery.rackReady && stock <= BREAD_FULL - 6) {
+      // a cooled batch is waiting and the tables are getting bare: take it out front
+      w.jobs.push({ spot: SPOT.rack, dur: 0.8, pose: 'reach', done: w => { bakery.rackReady = false; showRack(false); hold(w, 'front', bakeTray(BREADS[0], 6)); } });
+      breadTables.forEach((t, i) => w.jobs.push({
+        spot: t.refill, dur: 1.6, pose: 'reach',
+        done: w => {
+          t.baskets.forEach(b => { b.count = 3; syncBasket(b); });
+          if (i === breadTables.length - 1) {
+            hold(w, 'front', null);
+            if (elapsed - bakery.toastAt > 40) { bakery.toastAt = elapsed; toast('Fresh bread is out!', 'gold', 'bread'); }
+          }
+        },
+      }));
+    } else if (oven.state === 'done' && !bakery.rackReady) {
+      w.jobs.push(
+        { spot: SPOT.oven, dur: 1.3, pose: 'reach', start: () => { oven.want = 1; }, done: w => { oven.want = 0; oven.state = 'idle'; hold(w, 'front', bakeTray(BREADS[0], 6)); } },
+        { spot: SPOT.rack, dur: 1.0, pose: 'reach', done: w => { hold(w, 'front', null); bakery.rackReady = true; showRack(true); } },
+      );
+    } else if (DESSERTS.some(f => f.avail === 0) || dessertsLeft() <= 8) {
+      w.jobs.push(
+        { spot: SPOT.fridge, dur: 1.4, pose: 'reach', start: () => { fridges[1].want = 1; }, done: w => { fridges[1].want = 0; hold(w, 'front', boxOf(0xffd0de, 0.34, 0.18, 0.26, 0xff6f59)); } },
+        { spot: SPOT.showcase, dur: 2.0, pose: 'reach', done: w => {
+          hold(w, 'front', null);
+          DESSERTS.forEach(f => { f.avail = 4; f.shown = 4; f.slots.forEach(m => { m.visible = true; }); });
+        } },
+      );
+    } else if (oven.state === 'idle' && (!bakery.rackReady || stock < BREAD_FULL)) {
+      // keep one batch in the oven while bread is selling; it waits there (warm) until the rack is free
+      w.jobs.push(
+        { spot: SPOT.knead, dur: 5, pose: 'knead',
+          tick: (w, u) => { const q = Math.sin(u * 34); dough.scale.set(1 + 0.18 * q, 0.65 - 0.12 * q, 1 + 0.1 * q); },
+          done: w => { dough.scale.set(1, 0.65, 1); hold(w, 'front', bakeTray(null, 6)); } },
+        { spot: SPOT.oven, dur: 1.2, pose: 'reach', start: () => { oven.want = 1; }, done: w => { oven.want = 0; hold(w, 'front', null); oven.state = 'baking'; oven.t = 16; } },
+      );
+    }
+  }
+
+  /* ---------- the roaster: green beans → hopper → roast → cooling tray → grinders (or the retail table) ---------- */
+  const ROAST_T = 12, COOL_T = 6;
+  const roast = { state: 'idle', t: 0, heat: 0, bags: 2, toastAt: -99 };
+  const syncBags = () => tableBags.forEach((b, i) => { b.visible = i < roast.bags; });
+  function planRoaster(w) {
+    if (roast.state === 'cooled') {
+      w.jobs.push({ spot: SPOT.tray, dur: 1.6, pose: 'reach', done: w => { roast.state = 'idle'; trayBeans.visible = false; hold(w, 'front', beanBag()); } });
+      const low = stations.filter(st => st.beans < 0.6).sort((a, b) => a.beans - b.beans)[0];
+      if (low) w.jobs.push({ spot: low.grinderSpot, dur: 1.0, pose: 'up', done: w => { low.beans = 1; hold(w, 'front', null); } });
+      else w.jobs.push({ spot: SPOT.bag, dur: 1.4, pose: 'reach', done: w => { hold(w, 'front', null); roast.bags = Math.min(tableBags.length, roast.bags + 1); syncBags(); } });
+    } else if (roast.state === 'idle') {
+      w.jobs.push(
+        { spot: SPOT.pallet, dur: 1.0, pose: 'reach', done: w => hold(w, 'front', beanSack()) },
+        { spot: SPOT.hopper, dur: 1.4, pose: 'up', done: w => { hold(w, 'front', null); roast.state = 'charged'; hopperBeans.scale.y = 1; } },
+        { spot: SPOT.panel, dur: 1.0, pose: 'reach', done: () => { roast.state = 'roasting'; roast.t = ROAST_T; } },
+      );
+    } else {
+      w.jobs.push({ spot: SPOT.panel, dur: R(2, 4), pose: Math.random() < 0.5 ? 'reach' : null });   // keep an eye on the roast
+    }
+  }
+
+  function updateBackOfHouse(dt) {
+    const h = state.hour;
+    for (const w of [baker, roaster]) {
+      // the roaster doesn't walk away from a roast in progress
+      const on = onShift(w, h) || (w === roaster && (roast.state === 'charged' || roast.state === 'roasting' || roast.state === 'cooling'));
+      if (!busy(w)) {
+        if (on) (w === baker ? planBaker : planRoaster)(w);
+        if (!busy(w) && w.at !== w.home) w.jobs.push({ spot: w.home, dur: 0.2 });   // nothing to do: back to their own corner
+      }
+      const visible = on || busy(w);
+      w.scale += ((visible ? 1 : 0) - w.scale) * (1 - Math.exp(-dt * 5));
+      const moving = runJobs(w, dt, 1.6);
+      if (!busy(w) && !moving && on) {
+        // nothing urgent: the baker shapes dough at the work table now and then
+        w.idleT -= dt;
+        if (w === baker && w.idleT <= 0) { w.idleT = R(3, 6); w.jobs.push({ spot: SPOT.knead, dur: R(3, 5), pose: 'knead' }); }
+      }
+      w.p.outer.position.set(w.pos.x, 0, w.pos.z);
+      w.p.outer.scale.setScalar(Math.max(0.001, w.scale) * PERSON_SCALE);
+      animatePerson(w.p, { moving: moving && w.stepping !== false, cup: w.hands.cup, left: w.hands.left, front: w.hands.front, pose: w.pose }, dt);
+    }
+  }
+
+  /* ---------- machines: oven, roaster, fridges, ice machine, drip towers ---------- */
+  const OVEN_COLD = new THREE.Color(0x4a2a1a), OVEN_HOT = new THREE.Color(0xffa040);
+  const DRUM_COLD = new THREE.Color(0x3a2418), DRUM_HOT = new THREE.Color(0xff7a2e);
+  const roastSmoke = makeEmitter(chimneyTop.x, chimneyTop.y, chimneyTop.z, 'smoke');
+  const trayVapour = makeEmitter(CT_X, 0.95, CT_Z);
+  const ovenVapour = makeEmitter(OVEN_X + 0.55, 1.6, OVEN_Z);
+  function updateMachines(dt) {
+    // deck oven
+    if (oven.state === 'baking') { oven.t -= dt; if (oven.t <= 0) oven.state = 'done'; }
+    const heat = oven.state === 'baking' ? 1 : oven.state === 'done' ? 0.55 + 0.25 * Math.sin(elapsed * 4) : 0.08;
+    oven.glow += (heat - oven.glow) * (1 - Math.exp(-dt * 2));
+    ovenGlowMat.color.copy(OVEN_COLD).lerp(OVEN_HOT, oven.glow);
+    oven.open += (oven.want - oven.open) * (1 - Math.exp(-dt * 6));
+    ovenDoors.forEach(d => { d.rotation.z = -1.0 * oven.open; });
+    ovenVapour.rate = oven.open > 0.4 ? 10 : 0;
+
+    // drum roaster
+    if (roast.state === 'roasting') {
+      roast.t -= dt;
+      hopperBeans.scale.y = Math.max(0.001, 1 - (ROAST_T - roast.t) / 2.5);       // beans drop into the drum
+      if (roast.t <= 0) { roast.state = 'cooling'; roast.t = COOL_T; trayBeans.visible = true; hopperBeans.scale.y = 0.001; }
+    } else if (roast.state === 'cooling') {
+      roast.t -= dt;
+      if (roast.t <= 0) {
+        roast.state = 'cooled';
+        if (elapsed - roast.toastAt > 60) { roast.toastAt = elapsed; toast('Fresh roast!', 'mint', 'bean'); }
+      }
+    }
+    const roasting = roast.state === 'roasting';
+    roast.heat += ((roasting ? 1 : 0) - roast.heat) * (1 - Math.exp(-dt * 0.8));
+    roastGlowMat.color.copy(DRUM_COLD).lerp(DRUM_HOT, roast.heat);
+    const running = roaster.scale > 0.05 || roasting;
+    paddle.rotation.z -= dt * (roasting ? 6 : running ? 1.2 : 0);
+    stirrer.rotation.y += dt * (roast.state === 'cooling' ? 3 : roast.state === 'cooled' ? 1 : 0);
+    roastSmoke.rate = roasting ? 1.2 + 3.5 * roast.heat : 0;
+    trayVapour.rate = roast.state === 'cooling' ? 6 : 0;
+    needlePivot.rotation.x = -1.2 + 2.4 * (roasting ? 1 - roast.t / ROAST_T : roast.heat);
+    roastLamps[0].m.color.copy(running ? roastLamps[0].on : roastLamps[0].off);
+    roastLamps[1].m.color.copy(roasting && Math.sin(elapsed * 6) > 0 ? roastLamps[1].on : roastLamps[1].off);
+    roastLamps[2].m.color.copy(roast.state === 'cooled' ? roastLamps[2].on : roastLamps[2].off);
+
+    // fridge doors and the ice-machine scoop door
+    fridges.forEach(f => { f.open += (f.want - f.open) * (1 - Math.exp(-dt * 6)); f.hinge.rotation.y = 1.25 * f.open; });
+    iceMachine.open += (iceMachine.want - iceMachine.open) * (1 - Math.exp(-dt * 6));
+    iceDoor.rotation.x = -0.18 - 0.9 * iceMachine.open;
+    iceFill.scale.y = Math.max(0.05, state.ice);
+    stations.forEach(st => { st.beanMesh.scale.y = Math.max(0.08, st.beans); });
+
+    // slow-drip towers: a drop every so often, carafes filling over the day
+    drips.forEach(d => {
+      d.level += dt * 0.004; if (d.level > 1) d.level = 0.15;
+      d.fill.scale.y = d.level;
+      const u = (elapsed * 1.1 + d.phase) % 1;
+      d.d1.position.y = 0.88 - 0.08 * u; d.d1.visible = u < 0.95;
+      const u2 = (elapsed * 0.9 + d.phase + 0.5) % 1;
+      d.d2.position.y = 0.39 - (0.39 - (0.02 + 0.22 * d.level)) * u2; d.d2.visible = u2 < 0.95;
+    });
   }
 
   /* ---------- time of day ---------- */
@@ -1236,7 +2126,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     dayAmt = day;
     const dusk = clamp(Math.exp(-(((h - 19.1) / 0.85) ** 2)) + 0.8 * Math.exp(-(((h - 6.5) / 0.6) ** 2)), 0, 1);
     const p = clamp((h - 6) / 14, 0, 1);
-    sun.position.set(19 - 38 * p, 4 + 19 * Math.sin(Math.PI * p), 13);
+    sun.position.set(15 - 38 * p, 4 + 19 * Math.sin(Math.PI * p), 13);
     // cap the midday peak: toon shading has no tone mapping, so sun + sky above ~1.0 burns out to white
     sun.intensity = 0.62 * Math.pow(day, 0.6) * (1 - 0.18 * Math.max(0, Math.sin(Math.PI * clamp((h - 9) / 6, 0, 1))));
     sun.color.copy(SUN_DAY).lerp(SUN_DUSK, dusk * 0.8);
@@ -1248,7 +2138,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     streetMat.color.copy(STREET_NIGHT).lerp(STREET_DAY, day);
     litMat.opacity = clamp(1 - day * 1.6, 0, 0.9);
 
-    const on = lightsOn(h);
+    const on = lightsOn(h) || baker.scale > 0.05 || roaster.scale > 0.05;   // the early baker switches the lights on too
     lampFade += ((on ? 1 : 0) - lampFade) * 0.06;
     const lampLevel = 0.05 + lampFade * (0.5 + 0.9 * (1 - day));
     lamps.forEach(l => { l.intensity = l.userData.base * lampLevel; });
@@ -1264,7 +2154,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
   /* ---------- HUD ---------- */
   const el = id => document.getElementById(id);
-  const ui = { clock: el('clock'), status: el('status'), served: el('served'), inline: el('inline'), seated: el('seated'), revenue: el('revenue'), day: el('day'), dayico: el('dayico'), time: el('time'), play: el('play'), orbit: el('orbit'), reset: el('reset'), toasts: el('toasts') };
+  const ui = { clock: el('clock'), status: el('status'), served: el('served'), baked: el('baked'), inline: el('inline'), seated: el('seated'), seatcap: el('seatcap'), seatpill: el('seatpill'), revenue: el('revenue'), day: el('day'), dayico: el('dayico'), time: el('time'), play: el('play'), orbit: el('orbit'), reset: el('reset'), toasts: el('toasts') };
   let dragging = false;
   ui.time.addEventListener('pointerdown', () => { dragging = true; });
   window.addEventListener('pointerup', () => { dragging = false; });
@@ -1315,7 +2205,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 2300);
   }
 
-  let last = { clock: '', served: -1, inline: -1, seated: -1, open: null, revenue: -1, day: -1, night: null };
+  let last = { clock: '', served: -1, baked: -1, inline: -1, seated: -1, open: null, revenue: -1, day: -1, night: null };
+  ui.seatcap.textContent = `/ ${chairs.length} seated`;
+  ui.seatpill.title = `Seats taken, out of ${chairs.length}`;
   function updateHud() {
     const hh = Math.floor(state.hour), mm = Math.floor((state.hour - hh) * 60);
     const clock = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
@@ -1329,6 +2221,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       ui.status.classList.toggle('closed', !open); last.open = open;
     }
     if (state.served !== last.served) { ui.served.textContent = state.served; last.served = state.served; }
+    if (state.baked !== last.baked) { ui.baked.textContent = state.baked; last.baked = state.baked; }
     if (state.revenue !== last.revenue) { ui.revenue.textContent = state.revenue.toLocaleString('en-US'); last.revenue = state.revenue; }
     if (state.day !== last.day) { ui.day.textContent = state.day; last.day = state.day; }
     if (queue.length !== last.inline) { ui.inline.textContent = queue.length; last.inline = queue.length; }
@@ -1348,6 +2241,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       document.fonts.load('800 30px "Nunito"'),
     ]).then(() => {
       seed = 99; drawMenu(menuTex.userData.canvas.getContext('2d'), 1024, 400); menuTex.needsUpdate = true;
+      drawBakeryBoard(bakeryBoardTex.userData.canvas.getContext('2d'), 256, 352); bakeryBoardTex.needsUpdate = true;
+      plaques.forEach(q => { const old = q.m.map; q.m.map = plaqueTex(q.text, q.bg, q.fg); q.m.needsUpdate = true; old.dispose(); });
       openTex = signTex('OPEN', '#ffb35c', '#7a5a33'); closedTex = signTex('CLOSED', '#8a949a', '#3b4246');
       signOpen = null;
       textTexCache.forEach(t => t.dispose()); textTexCache.clear();
@@ -1357,7 +2252,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   /* ---------- loop ---------- */
   const HOURS_PER_SEC = 1 / 10;   // one in-shop hour every 10 seconds at 1×
   const clockT = new THREE.Clock();
-  for (let i = 0; i < 4; i++) { spawnCustomer(); const c = customers[i]; c.pos.copy(QUEUE[i]); c.path = []; c.state = 'queue'; c.scale = 1; }   // a few regulars already in line
+  for (let i = 0; i < 4; i++) { const c = spawnCustomer(true); c.pos.copy(QUEUE[i]); c.path = []; c.state = 'queue'; c.scale = 1; }   // a few regulars already in line
+  baker.scale = roaster.scale = onShift(baker, state.hour) ? 1 : 0;
 
   let prevOpen = isOpen(state.hour);
   function step(dt) {
@@ -1366,7 +2262,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     if (state.playing) {
       state.hour += dt * HOURS_PER_SEC;
       if (state.hour >= 24) {
-        state.hour -= 24; state.served = 0; state.revenue = 0; state.day++;
+        state.hour -= 24; state.served = 0; state.baked = 0; state.revenue = 0; state.day++;
         toast(`Day ${state.day}`, 'blue', 'star');
       }
       const crossed = t => before < t && state.hour >= t;
@@ -1377,14 +2273,16 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     }
     // who is on their feet this tick (seated customers and people fading out don't block anyone)
     crowd.length = 0;
-    for (const b of baristas) crowd.push(b);
+    for (const w of staff) if (w.scale > 0.3) crowd.push(w);
     for (const c of customers) if (c.scale > 0.3 && c.state !== 'sitting' && c.state !== 'exit') crowd.push(c);
     for (const a of crowd) a.walking = a.path.length > 0 && !(a.waitHop > 0);
     updateCustomers(dt);
     updateBaristas(dt);
+    updateBackOfHouse(dt);
+    updateMachines(dt);
     for (const e of emitters) {
       e.acc += e.rate * dt;
-      while (e.acc >= 1) { e.acc -= 1; emit(e.x, e.y, e.z, e.rate > 3 ? 1 : 0.7); }
+      while (e.acc >= 1) { e.acc -= 1; emit(e.x, e.y, e.z, e.kind === 'smoke' ? 0.8 : e.rate > 3 ? 1 : 0.7, e.kind); }
     }
     updatePuffs(dt);
     updatePopups(dt);
@@ -1407,5 +2305,16 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+
+  // for poking around in dev tools
+  window.__cafe = {
+    state, customers, baristas, baker, roaster, oven, roast, breadTables, DESSERTS, camera, controls, scene, renderer,
+    setHour: h => { state.hour = clamp(h, 0, 23.999); },
+    advance(seconds) { for (let t = 0; t < seconds; t += 1 / 30) step(1 / 30); },   // fast-forward the simulation without drawing
+    look(x, z, zoom = 2.5) {
+      const d = HOME.clone().sub(HOME_TARGET);
+      controls.target.set(x, 0.6, z); camera.position.copy(controls.target).add(d); camera.zoom = zoom; camera.updateProjectionMatrix(); controls.update();
+    },
+  };
 })();
 </script>
